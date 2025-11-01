@@ -52,51 +52,79 @@
   <body>
   <div class="container">
 
-<!-- LOGIN -->
-<div id="pageLogin" 
-  style="display:flex;justify-content:center;align-items:flex-start;min-height:100vh;
-  background:url('https://lh3.googleusercontent.com/d/1K9yibKVBVgZaCJWLsT7qSVJoswP1uYMF') no-repeat center center/cover;
-  padding-top:60px;"> <!-- 👈 ഇത് login box മുകളിലേക്ക് നീക്കാൻ -->
+<div id="pageLogin"
+  style="
+    /* ലോഗിൻ ബോക്സ് സെന്റർ ആക്കാനുള്ള സ്റ്റൈലുകൾ */
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    /* മുഴുവൻ സ്ക്രീനിലും കാണാൻ */
+    height:100vh;
+    width:100vw;
+    margin:0;
+    padding:0;
+    /* ബാക്ക്ഗ്രൗണ്ട് ഇമേജ് */
+    background:url('https://lh3.googleusercontent.com/d/1K9yibKVBVgZaCJWLsT7qSVJoswP1uYMF') no-repeat center center / cover;
+    box-sizing:border-box;
+    background-color:#333; /* ഇമേജ് ലോഡ് ചെയ്യാത്ത സാഹചര്യത്തിൽ */
+  ">
 
-  <div style="background:rgba(0,0,0,0.5);padding:20px 25px;border-radius:15px;width:90%;max-width:360px;
-  text-align:center;box-shadow:0 0 15px rgba(0,0,0,0.4);color:#fff;">
+  <div style="
+    /* ബാക്ക്ഗ്രൗണ്ട് പൂർണ്ണമായി ട്രാൻസ്പരൻ്റ് */
+    background:none; 
+    padding:30px 25px;
+    border-radius:15px;
+    /* വീതി 90% ൽ നിന്ന് 85% ആയി കുറച്ചു - കൂടുതൽ ഗ്യാപ്പിന് */
+    width:85%; 
+    /* എല്ലാ മൊബൈലിലും വൃത്തിയായി കാണാൻ പരമാവധി വീതി */
+    max-width:380px; 
+    text-align:center;
+    /* ടെക്സ്റ്റ് കളർ വൈറ്റ് */
+    color:#fff; 
+    box-shadow:0 8px 20px rgba(0,0,0,0.25); 
+    backdrop-filter: blur(2px); 
+    -webkit-backdrop-filter: blur(2px);
+  ">
 
-    <img src="https://lh3.googleusercontent.com/d/11V88ARugBrZJCMAokXT5uEk41D5axqII" 
-      alt="DM Logo" style="width:110px;height:110px;margin-bottom:8px;">
+    <img src="https://lh3.googleusercontent.com/d/1pKfOnhW0cfZzRU8qkrcydfJeDWLMwB4e"
+      alt="DM Logo"
+      style="width:100px;height:100px;margin:0 auto 15px auto;display:block;border-radius:50%;border:3px solid #fff;">
 
-    <h3 style="color:#ff0;font-size:15px;line-height:1.5;margin-bottom:12px;">
+    <h3 style="color:#ff0;font-size:16px;line-height:1.4;margin-bottom:20px;font-weight:600;">
       കേരളത്തിലെ ഭിന്നശേഷിക്കാർക്ക് സൗജന്യ മാട്രിമോണി വെബ്സൈറ്റ്
     </h3>
+    
+    <label style="display:block;text-align:left;font-size:14px;margin:6px 0 4px 4px;font-weight:500;">Your Phone Number</label>
+    <input type="tel" id="phone" placeholder="Enter your registered phone number"
+      style="width:100%;padding:12px;border:none;border-radius:6px;font-size:15px;margin-bottom:10px;box-sizing:border-box;background:rgba(255,255,255,0.9);color:#333;">
 
-    <label style="display:block;text-align:left;font-size:14px;margin:6px 0 4px 4px;">Your Phone Number</label>
-    <input type="tel" id="phone" placeholder="Enter your registered phone number" 
-      style="width:95%;padding:12px;border:none;border-radius:6px;font-size:15px;margin-bottom:10px;">
-
-    <label style="display:block;text-align:left;font-size:14px;margin:6px 0 4px 4px;">Date of Birth</label>
-    <div style="display:flex;gap:6px;margin-bottom:10px;">
-      <select id="day" style="flex:1;padding:12px;border:none;border-radius:6px;"><option value="">Day</option></select>
-      <select id="month" style="flex:1;padding:12px;border:none;border-radius:6px;"><option value="">Month</option></select>
-      <select id="year" style="flex:1;padding:12px;border:none;border-radius:6px;"><option value="">Year</option></select>
+    <label style="display:block;text-align:left;font-size:14px;margin:6px 0 4px 4px;font-weight:500;">Date of Birth</label>
+    <div style="display:flex;gap:6px;margin-bottom:15px;">
+      <select id="day" style="flex:1;padding:12px;border:none;border-radius:6px;font-size:16px;box-sizing:border-box;background:rgba(255,255,255,0.9);color:#333;"><option value="">Day</option></select>
+      <select id="month" style="flex:1;padding:12px;border:none;border-radius:6px;font-size:16px;box-sizing:border-box;background:rgba(255,255,255,0.9);color:#333;"><option value="">Month</option></select>
+      <select id="year" style="flex:1;padding:12px;border:none;border-radius:6px;font-size:16px;box-sizing:border-box;background:rgba(255,255,255,0.9);color:#333;"><option value="">Year</option></select>
     </div>
 
     <button onclick="login()" 
-      style="width:100%;padding:12px;border:none;border-radius:25px;background:#00b050;color:#fff;
-      font-size:16px;font-weight:bold;cursor:pointer;margin-bottom:10px;">
+      style="width:100%;padding:13px;border:none;border-radius:25px;background:#00b050;color:#fff;
+      font-size:17px;font-weight:bold;cursor:pointer;margin-bottom:12px;transition:background 0.3s;">
       Login
     </button>
 
     <button onclick="showPage('pageRegister')" 
-      style="width:100%;padding:12px;border:none;border-radius:25px;background:#001a66;color:#fff;
-      font-size:16px;font-weight:bold;cursor:pointer;">
+      style="width:100%;padding:13px;border:none;border-radius:25px;background:#001a66;color:#fff;
+      font-size:17px;font-weight:bold;cursor:pointer;transition:background 0.3s;">
       Register Now
     </button>
 
-    <div id="error" style="color:#ff8080;margin-top:10px;"></div>
-
-    <div style="font-size:13px;color:#0ff;margin-top:10px;">Designed by SUNEER PARAMBIL</div>
+    <div id="error" style="color:#ff8080;margin-top:10px;font-size:14px;"></div>
+    <div style="font-size:12px;color:#0ff;margin-top:15px;">Designed by SUNEER PARAMBIL</div>
 
   </div>
 </div>
+
+
+
 
 
 
@@ -407,6 +435,111 @@
   </div>
 </div>
 
+<div id="pageEdit" style="display:none;">
+    <h2 style="text-align:center;">✏️ Edit Profile</h2>
+
+    <form id="editForm" style="max-width:600px;margin:auto;padding:15px;">
+        <style>
+          #editForm {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+          }
+          #editForm label {
+            font-weight: bold;
+            margin-bottom: 3px;
+            display: block; /* ലേബലുകൾ വേർതിരിക്കാൻ */
+          }
+          #editForm input,
+          #editForm select,
+          #editForm textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+          }
+          #editForm textarea {
+            min-height: 80px;
+          }
+        </style>
+
+        <p style="color:#007bff; text-align:center; font-weight:bold;">Only listed fields are editable.</p>
+
+        <label>Name</label>
+        <input name="Name" id="editName" required>
+        
+        <label>Date of Birth (Not Editable)</label>
+        <input name="Date of Birth" id="editDob" disabled style="background:#eee; color:#666;">
+
+        <label>Height</label>
+        <input name="Height" id="editHeight">
+        
+        <label>Disability Details</label>
+        <select name="Disability Details" id="editDisability" required>
+            <option value="">Select</option>
+            <option>Deaf</option>
+            <option>Blind</option>
+            <option>Physical Disabilities</option>
+            <option>Learning Disabilities</option>
+            <option>MR</option>
+            <option>Other Disabilities</option>
+        </select>
+
+        <label>Education</label>
+        <input name="Education" id="editEducation" required>
+
+        <label>Job</label>
+        <input name="Job" id="editJob">
+
+        <label>Marital Status</label>
+        <select name="Marital Status" id="editMaritalStatus" required>
+            <option value="">Select</option>
+            <option>Unmarried</option>
+            <option>Divorced</option>
+            <option>Nikah Divorced</option>
+        </select>
+        
+        <label>Full Address</label>
+        <textarea name="Full Address" id="editAddress" required></textarea>
+
+        <label>District</label>
+        <select name="District" id="editDistrict" required>
+            <option value="">Select District</option>
+            <option>Thiruvananthapuram</option>
+            <option>Kollam</option>
+            <option>Pathanamthitta</option>
+            <option>Alappuzha</option>
+            <option>Kottayam</option>
+            <option>Idukki</option>
+            <option>Ernakulam</option>
+            <option>Thrissur</option>
+            <option>Palakkad</option>
+            <option>Malappuram</option>
+            <option>Kozhikode</option>
+            <option>Wayanad</option>
+            <option>Kannur</option>
+            <option>Kasaragod</option>
+        </select>
+
+        <label>Contact Number 1</label>
+        <input name="Contact Number 1" id="editContact1" required>
+
+        <label>Contact Number 2</label>
+        <input name="Contact Number 2" id="editContact2">
+        
+        <label>About Me</label>
+        <textarea name="About Me" id="editAboutMe"></textarea>
+
+        <div class="btn-group" style="margin-top:20px; display:flex; gap:10px; justify-content:center;">
+            <button type="button" onclick="updateProfile()" style="background:#28a745;">💾 Update Profile</button>
+            <button type="button" onclick="showPage('pageSearch')" style="background:#6c757d;">Back to Profile</button>
+        </div>
+
+        <div id="editStatus" style="text-align:center;margin-top:8px;"></div>
+    </form>
+</div>
 
     <!-- RESULTS -->
     <div id="pageResults" style="display:none">
@@ -855,6 +988,8 @@ function showMyProfile(profile){
   loggedProfile = profile;
   document.getElementById('myProfileStatus').textContent = "";
 }
+
+
 /* ✏️ EDIT PROFILE (NEW LOGIC) */
 function editProfile() {
   if (!loggedProfile) { alert('Please login first'); return; }
