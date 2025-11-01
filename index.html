@@ -1,0 +1,1149 @@
+  <!DOCTYPE html>
+  <html lang="ml">
+  <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Matrimony — Login / Search / My Profile</title>
+  <style>
+    :root{--primary:#007bff;--danger:#d9534f;--muted:#666}
+    body{font-family:Arial,Helvetica,sans-serif;background:#f3f3f3;margin:0;padding:18px}
+    .container{max-width:1000px;margin:auto;background:#fff;padding:18px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,0.06)}
+    h2{text-align:center;margin:6px 0 16px}
+    input,button,select,textarea{padding:8px;margin:6px 0;border-radius:6px;border:1px solid #ddd;font-size:15px;box-sizing:border-box}
+    button{background:var(--primary);color:#fff;border:none;cursor:pointer;padding:10px 14px;border-radius:6px}
+    button:hover{opacity:.95}
+    .small-btn{padding:8px 10px;font-size:14px}
+    .flex{display:flex;gap:12px;align-items:center}
+    .results{display:flex;flex-wrap:wrap;gap:15px;margin-top:20px;justify-content:center}
+    .card{background:#fff;border:1px solid #e6e6e6;border-radius:8px;width:320px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;flex-direction:column}
+    .card img{width:100%;height:220px;object-fit:cover;border-radius:6px;cursor:pointer}
+    .info{font-size:14px;text-align:left;margin-top:8px;overflow-x:auto}
+    .info b{display:inline-block;width:110px}
+    .no-photo{width:100%;height:220px;display:flex;align-items:center;justify-content:center;background:#eee;color:#555;font-size:20px;border-radius:6px}
+    #error{color:red;margin-top:10px;text-align:center}
+    .pagination{text-align:center;margin-top:15px}
+    .footer-text{font-size:13px;color:#444;margin-top:14px;line-height:1.4;text-align:center}
+    .register-note{font-size:14px;color:#333;margin-top:10px}
+    .my-profile{max-width:540px;margin:20px auto 0;padding:18px;border-radius:12px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,0.04)}
+    .my-profile img{width:160px;height:160px;object-fit:cover;border-radius:12px;border:3px solid #eee;display:block;margin:0 auto}
+    .profile-details{margin-top:12px;text-align:center;line-height:1.6}
+    .actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px}
+    .action-btn{padding:8px 14px;border-radius:8px;border:none;cursor:pointer;background:var(--primary);color:#fff}
+    .action-btn.danger{background:var(--danger)}
+    .notice{color:var(--muted);font-size:13px;margin-top:8px;text-align:center}
+    @media (max-width:640px){
+      .card{width:92%}
+      .container{padding:12px}
+      .my-profile img{width:130px;height:130px}
+    }
+    /* നിങ്ങളുടെ നിലവിലുള്ള <style> സെക്ഷനിൽ ഇത് കൂടി ചേർക്കുക */
+#pageEdit form{max-width:400px;margin:auto}
+#pageEdit input, #pageEdit select, #pageEdit textarea{width: 100%;} /* എല്ലാ ഇൻപുട്ടുകൾക്കും 100% വീതി നൽകുന്നു */
+@media (max-width:640px){
+  /* ... (മറ്റെന്തെങ്കിലും സ്റ്റൈലുകൾ ഉണ്ടെങ്കിൽ അതിനോട് ചേർക്കുക) */
+}
+
+    /* Modal */
+    .modal{display:none;position:fixed;z-index:2000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.9);align-items:center;justify-content:center;padding:20px}
+    .modal img{max-width:100%;max-height:90vh;border-radius:8px}
+    .modal .close{position:absolute;top:18px;right:22px;color:#fff;font-size:28px;cursor:pointer}
+  </style>
+  </head>
+  <body>
+  <div class="container">
+
+<!-- LOGIN -->
+<div id="pageLogin" 
+  style="display:flex;justify-content:center;align-items:flex-start;min-height:100vh;
+  background:url('https://lh3.googleusercontent.com/d/1K9yibKVBVgZaCJWLsT7qSVJoswP1uYMF') no-repeat center center/cover;
+  padding-top:60px;"> <!-- 👈 ഇത് login box മുകളിലേക്ക് നീക്കാൻ -->
+
+  <div style="background:rgba(0,0,0,0.5);padding:20px 25px;border-radius:15px;width:90%;max-width:360px;
+  text-align:center;box-shadow:0 0 15px rgba(0,0,0,0.4);color:#fff;">
+
+    <img src="https://lh3.googleusercontent.com/d/11V88ARugBrZJCMAokXT5uEk41D5axqII" 
+      alt="DM Logo" style="width:110px;height:110px;margin-bottom:8px;">
+
+    <h3 style="color:#ff0;font-size:15px;line-height:1.5;margin-bottom:12px;">
+      കേരളത്തിലെ ഭിന്നശേഷിക്കാർക്ക് സൗജന്യ മാട്രിമോണി വെബ്സൈറ്റ്
+    </h3>
+
+    <label style="display:block;text-align:left;font-size:14px;margin:6px 0 4px 4px;">Your Phone Number</label>
+    <input type="tel" id="phone" placeholder="Enter your registered phone number" 
+      style="width:95%;padding:12px;border:none;border-radius:6px;font-size:15px;margin-bottom:10px;">
+
+    <label style="display:block;text-align:left;font-size:14px;margin:6px 0 4px 4px;">Date of Birth</label>
+    <div style="display:flex;gap:6px;margin-bottom:10px;">
+      <select id="day" style="flex:1;padding:12px;border:none;border-radius:6px;"><option value="">Day</option></select>
+      <select id="month" style="flex:1;padding:12px;border:none;border-radius:6px;"><option value="">Month</option></select>
+      <select id="year" style="flex:1;padding:12px;border:none;border-radius:6px;"><option value="">Year</option></select>
+    </div>
+
+    <button onclick="login()" 
+      style="width:100%;padding:12px;border:none;border-radius:25px;background:#00b050;color:#fff;
+      font-size:16px;font-weight:bold;cursor:pointer;margin-bottom:10px;">
+      Login
+    </button>
+
+    <button onclick="showPage('pageRegister')" 
+      style="width:100%;padding:12px;border:none;border-radius:25px;background:#001a66;color:#fff;
+      font-size:16px;font-weight:bold;cursor:pointer;">
+      Register Now
+    </button>
+
+    <div id="error" style="color:#ff8080;margin-top:10px;"></div>
+
+    <div style="font-size:13px;color:#0ff;margin-top:10px;">Designed by SUNEER PARAMBIL</div>
+
+  </div>
+</div>
+
+
+
+    <div id="pageRegister" style="display:none;">
+  <h2 style="text-align:center;">📝 Matrimony Registration Form</h2>
+
+  <form id="regForm" style="max-width:600px;margin:auto;padding:15px;">
+    <style>
+      #regForm {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+      #regForm label {
+        font-weight: bold;
+        margin-bottom: 3px;
+      }
+      #regForm input,
+      #regForm select,
+      #regForm textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 16px;
+        box-sizing: border-box;
+      }
+      #regForm textarea {
+        min-height: 80px;
+      }
+      .dob-selects {
+        display: flex;
+        gap: 8px;
+      }
+      .dob-selects select {
+        flex: 1;
+      }
+      .btn-group button {
+        background: #007bff;
+        color: #fff;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      .btn-group button:hover {
+        background: #0056b3;
+      }
+      .btn-group {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      /* 🌐 Responsive */
+      @media (max-width: 600px) {
+        body {
+          padding: 10px;
+        }
+        #regForm {
+          gap: 12px;
+        }
+        .dob-selects {
+          flex-direction: column;
+        }
+        .btn-group {
+          flex-direction: column;
+        }
+        .btn-group button {
+          width: 100%;
+        }
+      }
+    </style>
+
+    <label>Name</label>
+    <input name="Name" required>
+
+    <label>Your Phone Number</label>
+    <input name="Your Phone Number" type="tel" required>
+
+    <label>Date of Birth</label>
+    <div class="dob-selects">
+      <select name="Day" required><option value="">Day</option></select>
+      <select name="Month" required><option value="">Month</option></select>
+      <select name="Year" required><option value="">Year</option></select>
+    </div>
+
+    <label>Age</label>
+    <input name="Age" type="number" min="18" max="100" required>
+
+    <label>Gender</label>
+    <select name="Gender" required>
+      <option value="">Select</option>
+      <option>Male</option>
+      <option>Female</option>
+    </select>
+
+    <label>Height</label>
+    <input name="Height">
+
+    <label>Religion</label>
+    <select name="Religion" required>
+      <option value="">Select</option>
+      <option>Muslim</option>
+      <option>Hindu</option>
+      <option>Christian</option>
+    </select>
+
+    <label>Caste</label>
+    <input name="Caste">
+
+    <label>Disability Details</label>
+    <select name="Disability Details" required>
+      <option value="">Select</option>
+      <option>Deaf</option>
+      <option>Blind</option>
+      <option>Physical Disabilities</option>
+      <option>Learning Disabilities</option>
+      <option>MR</option>
+      <option>Other Disabilities</option>
+    </select>
+
+    <label>Education</label>
+    <input name="Education" required>
+
+    <label>Job</label>
+    <input name="Job">
+
+    <label>Marital Status</label>
+    <select name="Marital Status" required>
+      <option value="">Select</option>
+      <option>Unmarried</option>
+      <option>Divorced</option>
+      <option>Nikah Divorced</option>
+    </select>
+
+    <label>Full Address</label>
+    <textarea name="Full Address" required></textarea>
+
+    <label>District</label>
+    <select name="District" required>
+      <option value="">Select District</option>
+      <option>Thiruvananthapuram</option>
+      <option>Kollam</option>
+      <option>Pathanamthitta</option>
+      <option>Alappuzha</option>
+      <option>Kottayam</option>
+      <option>Idukki</option>
+      <option>Ernakulam</option>
+      <option>Thrissur</option>
+      <option>Palakkad</option>
+      <option>Malappuram</option>
+      <option>Kozhikode</option>
+      <option>Wayanad</option>
+      <option>Kannur</option>
+      <option>Kasaragod</option>
+    </select>
+
+    <label>Contact Number 1</label>
+    <input name="Contact Number 1" required>
+
+    <label>Contact Number 2</label>
+    <input name="Contact Number 2">
+
+    <label>About Me</label>
+    <textarea name="About Me"></textarea>
+
+    <label>Upload Your Photo</label>
+    <input type="file" name="photoFile" accept="image/*">
+
+    <div class="btn-group" style="margin-top:20px">
+      <button id="submitBtn" type="button" onclick="registerUser()">Submit</button>
+      <button type="button" onclick="showPage('pageLogin')" style="background:#ccc;color:#000;">Back to Login</button>
+    </div>
+
+    <div id="status" style="text-align:center;margin-top:8px;"></div>
+  </form>
+</div>
+
+    <!-- SEARCH -->
+<div id="pageSearch" style="display:none;">
+  <h2>🔍 Matrimony Profile Search</h2>
+
+  <div style="display:flex;flex-direction:column;gap:15px;max-width:400px;margin:auto;"> 
+    <!-- 👆 ഇനി 3 ലൈൻ ആയി column ആക്കി -->
+    
+     <!-- Age -->
+    <div>
+      <label>Age</label><br>
+      <div style="display:flex;gap:8px;">
+        <select id="ageMin" style="flex:1;padding:8px;border-radius:6px;border:1px solid #ccc;">
+          <option value="">Min</option>
+        </select>
+        <select id="ageMax" style="flex:1;padding:8px;border-radius:6px;border:1px solid #ccc;">
+          <option value="">Max</option>
+        </select>
+      </div>
+    </div>
+    <div>
+      <label>District</label><br>
+      <select id="district" style="width:100%;">
+        <option value="">All</option>
+        <option>Thiruvananthapuram</option>
+        <option>Kollam</option>
+        <option>Pathanamthitta</option>
+        <option>Alappuzha</option>
+        <option>Kottayam</option>
+        <option>Idukki</option>
+        <option>Ernakulam</option>
+        <option>Thrissur</option>
+        <option>Palakkad</option>
+        <option>Malappuram</option>
+        <option>Kozhikode</option>
+        <option>Wayanad</option>
+        <option>Kannur</option>
+        <option>Kasaragod</option>
+      </select>
+    </div>
+
+    <div>
+      <label>Disability</label><br>
+      <select id="disability" style="width:100%;">
+        <option value="">All</option>
+        <option>Deaf</option>
+        <option>Blind</option>
+        <option>Physical Disabilities</option>
+        <option>Learning Disabilities</option>
+        <option>MR</option> <!-- 👈 ചേർത്തു -->
+        <option>Other Disabilities</option>
+      </select>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:18px;">
+    <button onclick="applySearch()">Search</button>
+    <button onclick="logout()" style="background:#dc3545;margin-left:10px;">Logout</button>
+  </div>
+
+  <div class="notice">Tip: Leave fields empty to include all.</div>
+</div>
+<script>
+  // ✅ Fill age dropdowns 18–65 dynamically
+  const minSel = document.getElementById('ageMin');
+  const maxSel = document.getElementById('ageMax');
+  for (let i = 18; i <= 65; i++) {
+    let opt1 = document.createElement('option');
+    opt1.value = i; opt1.text = i;
+    minSel.appendChild(opt1);
+    let opt2 = document.createElement('option');
+    opt2.value = i; opt2.text = i;
+    maxSel.appendChild(opt2);
+  }
+  // Default values
+  minSel.value = "18";
+  maxSel.value = "65";
+</script>
+
+
+      <!-- MY PROFILE -->
+<div id="myProfileSection" class="my-profile" style="display:none;max-width:600px;margin:auto;text-align:center;">
+
+  <h2 style="color:#003366;margin-bottom:15px;">My Profile Details</h2>
+
+  <img id="myProfilePhoto" 
+       src="https://via.placeholder.com/150?text=No+Photo" 
+       alt="Profile Photo" 
+       style="width:140px;height:140px;border-radius:50%;border:4px solid #00b050;object-fit:cover;margin-bottom:15px;">
+
+  <div id="myProfileDetails" class="profile-details" 
+       style="background:#f9f9f9;border-radius:10px;padding:15px;margin-bottom:20px;text-align:left;box-shadow:0 0 6px rgba(0,0,0,0.1);">
+  </div>
+
+  <!-- Action Buttons Grid -->
+  <div class="actions-grid" 
+       style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px;">
+    
+    <button class="action-box" onclick="editProfile()" 
+            style="background:#007bff;color:#fff;border:none;border-radius:12px;padding:15px 10px;font-weight:bold;
+                   cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,0.2);">
+      ✏️<br>Edit Profile
+    </button>
+    
+    <button class="action-box" onclick="changePhoto()" 
+            style="background:#17a2b8;color:#fff;border:none;border-radius:12px;padding:15px 10px;font-weight:bold;
+                   cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,0.2);">
+      📸<br>Change Photo
+    </button>
+    
+    <button class="action-box" onclick="deletePhoto()" 
+            style="background:#ffc107;color:#000;border:none;border-radius:12px;padding:15px 10px;font-weight:bold;
+                   cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,0.2);">
+      🗑️<br>Delete Photo
+    </button>
+    
+    <button class="action-box" onclick="deleteProfile()" 
+            style="background:#dc3545;color:#fff;border:none;border-radius:12px;padding:15px 10px;font-weight:bold;
+                   cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,0.2);">
+      ❌<br>Delete Profile
+    </button>
+  </div>
+
+  <p id="myProfileStatus" style="text-align:center;color:#666;font-size:14px;margin-top:5px;"></p>
+
+  <div class="footer-text" style="margin-top:18px;font-size:13px;color:#555;line-height:1.4;">
+    ഭിന്നശേഷിക്കാര്ക്ക് വിവാഹമെന്ന സ്വപ്നം പൂവണിയാൻ സൗജന്യ വെബ്സൈറ്റ്<br>
+    <strong>Website design by SUNEER PARAMBIL</strong>
+  </div>
+</div>
+
+
+    <!-- RESULTS -->
+    <div id="pageResults" style="display:none">
+      <h2>Search Results</h2>
+      <div style="margin-bottom:10px;text-align:center">
+        <button onclick="backToSearch()">Back to Search</button>
+        <button onclick="logout()" style="background:#dc3545;margin-left:8px">Logout</button>
+      </div>
+      <div class="results" id="results"></div>
+      <div class="pagination" id="pagination"></div>
+      <div class="footer-text" style="margin-top:14px">ഭിന്നശേഷിക്കാര്ക്ക് വിവാഹമെന്ന സ്വപ്നം പൂവണിയാൻ സൗജന്യ വെബ്സൈറ്റ് — Website design by SUNEER PARAMBIL</div>
+    </div>
+
+  </div>
+
+<div id="imgModal" class="modal">
+  <img class="modal-content" id="modalImg">
+</div>
+
+<script>
+const modal = document.getElementById('imgModal');
+const modalImg = document.getElementById('modalImg');
+
+function openModal(src) {
+  modal.style.display = 'flex';
+  modalImg.src = src;
+}
+
+// ടച്ച് / ക്ലിക്ക് anywhere to close
+modal.addEventListener('click', () => {
+  modal.style.display = 'none';
+});
+</script>
+
+<style>
+.modal {
+  display:none;
+  position:fixed;
+  z-index:1000;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.9);
+  justify-content:center;
+  align-items:center;
+}
+.modal-content {
+  max-width:90%;
+  max-height:90%;
+  border-radius:10px;
+}
+</style>
+
+
+<!-- MODAL HTML -->
+<div id="imgModal" class="modal">
+  <button class="close-btn" onclick="closeModal()">✖</button>
+  <img id="modalImg" src="" alt="Full image">
+</div>
+
+<script>
+  const modal = document.getElementById("imgModal");
+  const modalImg = document.getElementById("modalImg");
+
+  // Open image fullscreen
+  function openModal(src) {
+    modalImg.src = src;
+    modal.classList.add("show");
+    document.body.classList.add("modal-open");
+  }
+
+  // Close modal
+  function closeModal() {
+    modal.classList.remove("show");
+    document.body.classList.remove("modal-open");
+  }
+</script>
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script>
+  /* ========== CONFIG ========== */
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2tfPLs4XbkhijnDzAVktRbtL26FFHtdnGH-zvW3py6LfTaU6JkS156se4BHYvmlJM/exec"; // <-- set your script URL
+  const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHJLHXWQaMioqSExrL-vdbu65_py6Ti9KzPtkxXaMaj9CygZ9OFH1a3ne7rCQ0_fF_KhNc-OiPDmvo/pub?output=csv"; // your published CSV
+
+  /* ========== STATE ========== */
+  let allProfiles = [];        // all rows from CSV
+  let filteredProfiles = [];   // search results
+  let currentPage = 1;
+  const profilesPerPage = 10;
+  let loggedProfile = null;    // object for logged-in user (row)
+  let loggedInGender = "";
+
+  /* ========== Helpers ========== */
+function showPage(id){
+  ["pageLogin","pageRegister","pageSearch","pageResults", "pageEdit"].forEach(pid=>{ 
+    const el = document.getElementById(pid);
+    if(el) el.style.display = (pid===id) ? "block" : "none";
+  });
+  
+  // ✅ ഇവിടെ മാറ്റം വരുത്തി
+  const myProfileEl = document.getElementById('myProfileSection');
+  if(myProfileEl) {
+      // 'pageSearch' എന്ന പേജിൽ മാത്രം പ്രൊഫൈൽ കാണിക്കുക, മറ്റ് പേജുകളിൽ ഹൈഡ് ചെയ്യുക.
+      myProfileEl.style.display = (id === 'pageSearch' && loggedProfile) ? 'block' : 'none'; 
+  }
+  
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+  /* Fill day/month/year selects (used in login + register) */
+  function fillDobSelects(){
+    const dayEls = document.querySelectorAll("#day, select[name='Day']");
+    const monthEls = document.querySelectorAll("#month, select[name='Month']");
+    const yearEls = document.querySelectorAll("#year, select[name='Year']");
+    if(dayEls[0].children.length===1){
+      for(let i=1;i<=31;i++) dayEls.forEach(e=>e.insertAdjacentHTML('beforeend',`<option value="${i}">${i}</option>`));
+    }
+    if(monthEls[0].children.length===1){
+      for(let i=1;i<=12;i++) monthEls.forEach(e=>e.insertAdjacentHTML('beforeend',`<option value="${i}">${i}</option>`));
+    }
+    if(yearEls[0].children.length===1){
+      for(let i=new Date().getFullYear(); i>=1960; i--) yearEls.forEach(e=>e.insertAdjacentHTML('beforeend',`<option value="${i}">${i}</option>`));
+    }
+  }
+  // fillDobSelects(); // ✅ ഈ കോൾ ഇവിടെ നിന്ന് മാറ്റി അവസാനം ചേർക്കുന്നു.
+
+  /* Convert Google Drive share link to direct viewable lh3 url */
+  function convertDriveLink(url) {
+    if (!url) return "";
+
+    // Case 1: already direct image (works for drive.google.com/uc)
+    if (url.includes("https://drive.google.com/uc?export=view&id=")) {
+      const fileId = url.split("id=")[1];
+      return "https://lh3.googleusercontent.com/d/" + fileId;
+    }
+
+    // Case 2: open?id=xxxxx
+    if (url.includes("open?id=")) {
+      const fileId = url.split("open?id=")[1].split("&")[0];
+      return "https://lh3.googleusercontent.com/d/" + fileId;
+    }
+
+    // Case 3: /file/d/xxxxx/
+    if (url.includes("/file/d/")) {
+      const fileId = url.split("/file/d/")[1].split("/")[0];
+      return "https://lh3.googleusercontent.com/d/" + fileId;
+    }
+
+    // Default return
+    return url;
+  }
+modal.addEventListener("click", (e) => {
+  if (e.target === modal) closeModal();
+});
+
+ 
+
+  /* ========== LOGIN - (UPDATED) ========== */
+  async function login(){
+    const phone = document.getElementById('phone').value.trim();
+    const day = document.getElementById('day').value;
+    const month = document.getElementById('month').value;
+    const year = document.getElementById('year').value;
+    const err = document.getElementById('error');
+    err.textContent = "";
+
+    if(!phone){ err.textContent = "Please enter phone number."; return; }
+    if(!day || !month || !year){ err.textContent = "Please select full date of birth."; return; }
+    
+    // User-entered DOB: Ensure it's in a clean, consistent format like "1/1/1990"
+    const enteredDob = `${parseInt(day)}/${parseInt(month)}/${year}`;
+    const enteredDobClean = enteredDob.replace(/[^\d]/g, "/").replace(/\s+/g, "").trim();
+
+    try{
+      const res = await fetch(SHEET_CSV_URL);
+      const csv = await res.text();
+      Papa.parse(csv,{
+        header: true,
+        skipEmptyLines: true,
+        complete(results){
+          allProfiles = results.data || [];
+          
+          const match = allProfiles.find(p=>{
+            const phoneDb = (p["Your Phone Number"]||"").trim();
+            const dobDb = (p["Date of Birth"]||"").trim();
+            
+            // Normalize DOB from Database (replace non-digits with / and clean up spaces)
+            const dobDbClean = (dobDb||"").replace(/[^\d]/g,"/").replace(/\s+/g,"").trim();
+            
+            // Function to get clean D/M/Y parts
+            const parseParts = s => {
+                const parts = s.split("/").filter(Boolean).map(x => parseInt(x) || 0);
+                if (parts.length < 3) return [0, 0, 0];
+                return parts; // Assumes D/M/Y order based on CSV output
+            };
+            
+            const [d1,m1,y1] = parseParts(dobDbClean);
+            const [d2,m2,y2] = parseParts(enteredDobClean);
+            
+            const dobMatch = (d1===d2 && m1===m2 && y1===y2 && d1 !== 0);
+            
+            // ✅ LOGIN CRITERIA: Phone must match AND DOB must match
+            return phoneDb === phone && dobMatch;
+          });
+
+          if(match){
+            loggedProfile = match;
+            loggedInGender = (match.Gender||"").toLowerCase();
+            const loggedReligion = (match.Religion||"").toLowerCase();
+            const opposite = (loggedInGender==="male") ? "female" : "male";
+            
+            allProfiles = allProfiles.map(p=>p);
+            const candidates = allProfiles.filter(p=>{
+              return ((p.Gender||"").toLowerCase() === opposite) &&
+                     ((p.Religion||"").toLowerCase() === loggedReligion);
+            });
+            
+            filteredProfiles = candidates;
+            showPage('pageSearch');
+            showMyProfile(match);
+            
+            // Store necessary data in localStorage for action functions
+            localStorage.setItem('loggedProfile', JSON.stringify({
+                "Your Phone Number": match["Your Phone Number"],
+                "Date of Birth": match["Date of Birth"],
+            }));
+            console.log("Profile saved to localStorage:", match["Your Phone Number"]);
+          } else {
+            err.textContent = "Invalid phone number or date of birth!";
+          }
+        }
+      });
+    } catch(e){
+      err.textContent = "Error fetching data. Check CSV URL or network connection.";
+      console.error(e);
+    }
+  }
+
+  /* ========== LOGOUT (ADDED) ========== */
+  function logout(){
+      loggedProfile = null;
+      localStorage.removeItem('loggedProfile');
+      showPage('pageLogin');
+      document.getElementById('myProfileSection').style.display = 'none';
+      document.getElementById('error').textContent = "";
+      document.getElementById('phone').value = "";
+      document.getElementById('day').value = "";
+      document.getElementById('month').value = "";
+      document.getElementById('year').value = "";
+  }
+
+  /* ========== REGISTER ========== */
+  async function registerUser(){
+    const status = document.getElementById('status');
+    const form = document.getElementById('regForm');
+
+    if(!form.checkValidity()){
+      status.style.color = 'red';
+      status.textContent = 'Please fill required fields.';
+      return;
+    }
+
+    const fd = new FormData(form);
+    const fileInput = form.querySelector('input[name="photoFile"]');
+    const file = fileInput.files[0];
+
+    let base64 = "";
+    if(file){
+      const reader = await new Promise((res,rej)=>{
+        const r = new FileReader();
+        r.onload = e => res(e.target.result);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      base64 = reader.split(',')[1];
+    }
+
+    const params = new URLSearchParams();
+    for(const [k,v] of fd.entries()){
+      if(k === 'photoFile') continue;
+      params.append(k, v);
+    }
+    params.append('photo', base64);
+    params.append('photoName', file ? file.name : "");
+    params.append('photoType', file ? file.type : "");
+
+    try{
+      status.style.color = '#555';
+      status.textContent = 'Submitting...';
+      const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
+      const text = await res.text();
+      if(text.includes('ALREADY_REGISTERED')){
+        status.style.color = 'orange';
+        status.textContent = 'This phone number is already registered. Please login.';
+      } else if(text.includes('Success')){
+        status.style.color = 'green';
+        status.textContent = 'Registration successful — please login.';
+        form.reset();
+      } else {
+        status.style.color = 'red';
+        status.textContent = 'Error: ' + text;
+      }
+    } catch(err){
+      status.style.color = 'red';
+      status.textContent = 'Network error.';
+      console.error(err);
+    }
+  }
+
+  /* ========== SEARCH ========== */
+  function applySearch(){
+    // if filteredProfiles empty (e.g. login didn't set), default to allProfiles
+    const pool = (filteredProfiles && filteredProfiles.length>0) ? filteredProfiles : allProfiles;
+    const ageMin = parseInt(document.getElementById('ageMin').value) || 18;
+    const ageMax = parseInt(document.getElementById('ageMax').value) || 99;
+    const district = (document.getElementById('district').value || "").toLowerCase();
+    const disability = (document.getElementById('disability').value || "").toLowerCase();
+
+    const results = pool.filter(p=>{
+      const age = parseInt(p.Age) || calculateAge(p['Date of Birth']);
+      const dist = (p.District||"").toLowerCase();
+      const dis = (p['Disability Details']||"").toLowerCase();
+      const ageOk = age >= ageMin && age <= ageMax;
+      const distOk = !district || dist === district;
+      const disOk = !disability || dis.includes(disability);
+      return ageOk && distOk && disOk;
+    });
+
+    // set for pagination/display
+    filteredProfiles = results;
+    currentPage = 1;
+    showPage('pageResults');
+    displayProfiles();
+  }
+
+  /* ========== DISPLAY / PAGINATION ========== */
+  function displayProfiles(){
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const list = filteredProfiles || [];
+    const resultsDiv = document.getElementById("results");
+    resultsDiv.innerHTML = "";
+
+    if(list.length === 0){
+      resultsDiv.innerHTML = "<p>No matching profiles found.</p>";
+      document.getElementById("pagination").innerHTML = "";
+      return;
+    }
+
+    const start = (currentPage - 1) * profilesPerPage;
+    const end = start + profilesPerPage;
+    const pageProfiles = list.slice(start, end);
+
+    pageProfiles.forEach(p => {
+      const card = document.createElement("div");
+      card.className = "card";
+      const photoUrl = convertDriveLink(p["Photo Link"] || p["Upload Your Photo"] || "");
+      const photoHtml = photoUrl
+        ? `<img src="${photoUrl}" alt="photo" onclick="openModal('${photoUrl.replace(/'/g, "\\'")}')">`
+        : `<div class="no-photo">No Photo</div>`;
+
+      card.innerHTML = `
+        ${photoHtml}
+        <div class="info">
+          <b>Name:</b> ${p.Name||''}<br>
+          <b>Age:</b> ${calculateAge(p['Date of Birth']) || 'N/A'}<br>
+          <b>Gender:</b> ${p.Gender||''}<br>
+          <b>Religion:</b> ${p.Religion||''}<br>
+          <b>Caste:</b> ${p.Caste||''}<br>
+          <b>Disability:</b> ${p['Disability Details']||''}<br>
+          <b>Education:</b> ${p.Education||''}<br>
+          <b>Job:</b> ${p.Job||''}<br>
+          <b>Marital Status:</b> ${p['Marital Status']||''}<br>
+          <b>Full Address:</b> ${p['Full Address']||''}<br>
+          <b>District:</b> ${p.District||''}<br>
+          <b>Contact 1:</b> ${p['Contact Number 1']||''}<br>
+          <b>Contact 2:</b> ${p['Contact Number 2']||''}<br>
+          <b>About Me:</b> ${p['About Me']||''}<br>
+        </div>`;
+      resultsDiv.appendChild(card);
+    });
+
+    const paginationDiv = document.getElementById("pagination");
+    paginationDiv.innerHTML = `<button onclick="prevPage()">Previous</button> Page ${currentPage} of ${Math.ceil(list.length / profilesPerPage)} <button onclick="nextPage()">Next</button>`;
+  }
+
+  function nextPage(){
+    if(currentPage < Math.ceil(filteredProfiles.length / profilesPerPage)){
+      currentPage++;
+      displayProfiles();
+      // Scroll to top smoothly
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  function prevPage(){
+    if(currentPage > 1){
+      currentPage--;
+      displayProfiles();
+      // Scroll to top smoothly
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+ /* ========== MY PROFILE UI & ACTIONS (UPDATED) ========== */
+function showMyProfile(profile){
+  if(!profile) return;
+  document.getElementById('myProfileSection').style.display = 'block';
+  const photo = convertDriveLink(profile['Photo Link'] || profile['Upload Your Photo'] || "");
+  document.getElementById('myProfilePhoto').src = photo || "https://via.placeholder.com/150?text=No+Photo";
+  
+  const details = document.getElementById('myProfileDetails');
+  
+  // ✅ പുതിയ സ്റ്റൈലിംഗ്, കൂടുതൽ ഡീറ്റെയിൽസ് ചേർക്കുന്നു
+  details.innerHTML = `
+    <h3 style="margin:6px 0;">${escapeHtml(profile.Name||'')}</h3>
+    
+    <div style="text-align:left; margin: 10px auto; font-size: 15px;">
+        <p><b>Date of Birth:</b> ${escapeHtml(profile["Date of Birth"]||'')}</p>
+        <p><b>Age:</b> ${calculateAge(profile['Date of Birth']) || 'N/A'}</p>
+        <p><b>Gender:</b> ${escapeHtml(profile.Gender||'')}</p>
+        <p><b>Height:</b> ${escapeHtml(profile.Height||'')}</p>
+        <p><b>Religion:</b> ${escapeHtml(profile.Religion||'')}</p>
+        <p><b>Caste:</b> ${escapeHtml(profile.Caste||'')}</p>
+        <p><b>Disability Details:</b> ${escapeHtml(profile["Disability Details"]||'')}</p>
+        <p><b>Education:</b> ${escapeHtml(profile.Education||'')}</p>
+        <p><b>Job:</b> ${escapeHtml(profile.Job||'')}</p>
+        <p><b>Marital Status:</b> ${escapeHtml(profile["Marital Status"]||'')}</p>
+        <p><b>District:</b> ${escapeHtml(profile.District||'')}</p>
+        
+        <div style="text-align:left; margin: 10px auto; font-size: 15px;">
+            <b>Contact Number 1:</b> ${escapeHtml(profile["Contact Number 1"]||'')}</p>
+        <p><b>Contact Number 2:</b> ${escapeHtml(profile["Contact Number 2"]||'')}</p>
+        <p><b>Full Address:</b> ${escapeHtml(profile["Full Address"]||'')}</p>
+        
+        <p style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
+            <b>About Me:</b> ${escapeHtml(profile["About Me"]||'')}</p>
+    </div>
+  `;
+  
+  // store locally for actions (only phone is needed for action identity)
+  localStorage.setItem('loggedProfile', JSON.stringify({
+      "Your Phone Number": profile["Your Phone Number"],
+      "Date of Birth": profile["Date of Birth"],
+  }));
+  loggedProfile = profile;
+  document.getElementById('myProfileStatus').textContent = "";
+}
+/* ✏️ EDIT PROFILE (NEW LOGIC) */
+function editProfile() {
+  if (!loggedProfile) { alert('Please login first'); return; }
+  
+  // 1. ഡാറ്റ ഫോമിലേക്ക് ലോഡ് ചെയ്യുന്നു
+  document.getElementById('editName').value = loggedProfile.Name || '';
+  document.getElementById('editDob').value = loggedProfile['Date of Birth'] || ''; // DOB is not editable
+  document.getElementById('editHeight').value = loggedProfile.Height || '';
+  document.getElementById('editDisability').value = loggedProfile['Disability Details'] || '';
+  document.getElementById('editEducation').value = loggedProfile.Education || '';
+  document.getElementById('editJob').value = loggedProfile.Job || '';
+  document.getElementById('editMaritalStatus').value = loggedProfile['Marital Status'] || '';
+  document.getElementById('editAddress').value = loggedProfile['Full Address'] || '';
+  document.getElementById('editDistrict').value = loggedProfile.District || '';
+  document.getElementById('editContact1').value = loggedProfile['Contact Number 1'] || '';
+  document.getElementById('editContact2').value = loggedProfile['Contact Number 2'] || '';
+  document.getElementById('editAboutMe').value = loggedProfile['About Me'] || '';
+  
+  document.getElementById('editStatus').textContent = "";
+  
+  // 2. എഡിറ്റ് പേജിലേക്ക് പോകുന്നു
+  showPage('pageEdit');
+}
+ 
+/* 💾 UPDATE PROFILE (NEW LOGIC) */
+async function updateProfile() {
+  if (!loggedProfile) { 
+      alert('Login required to update profile.'); 
+      showPage('pageLogin');
+      return; 
+  }
+  
+  const status = document.getElementById('editStatus');
+  const form = document.getElementById('editForm');
+  
+  // ആവശ്യമായ ഫീൽഡുകൾ എല്ലാം പൂരിപ്പിച്ചു എന്ന് ഉറപ്പാക്കുന്നു
+  if (!form.checkValidity()) {
+      status.style.color = 'red';
+      status.textContent = 'Please fill all required fields.';
+      return;
+  }
+  
+  const fd = new FormData(form);
+  
+  // Create URLSearchParams object from FormData to send to Apps Script
+  const params = new URLSearchParams();
+  for(const [key, value] of fd.entries()) {
+      // DOB field disabled ആയതുകൊണ്ട് FormData-യിൽ വരില്ല, അത് Apps Script-ൽ അവഗണിക്കാം.
+      params.append(key, value);
+  }
+  
+  // 1. Action ഉം Phone നമ്പറും ചേർക്കുന്നു
+  params.append('action', 'editProfile');
+  appendUserIdentity(params); // ഇത് 'phone' parameter ചേർക്കുന്നു
+
+  try {
+      status.style.color = '#555';
+      status.textContent = 'Updating profile...';
+      
+      const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
+      const text = await res.text();
+
+      if (text.includes('PROFILE_UPDATED')) {
+          status.style.color = 'green';
+          status.textContent = 'Profile updated successfully! Returning to search page...';
+          
+          // 2.5 സെക്കൻഡ് കാത്തിരിക്കുന്നത് Apps Script അപ്ഡേറ്റ് ചെയ്ത്, CSV-യിൽ മാറ്റം വരാനുള്ള സമയം നൽകാനാണ്.
+          setTimeout(async () => {
+              // 1. login() വീണ്ടും വിളിക്കുമ്പോൾ CSV റീലോഡ് ചെയ്യുകയും
+              //    പുതിയ ഡാറ്റ ഉപയോഗിച്ച് loggedProfile അപ്ഡേറ്റ് ചെയ്യുകയും
+              //    search പേജിലേക്ക് (pageSearch) പോകുകയും ചെയ്യും.
+              await login(); 
+              
+              // 2. ഈ delay ക്ക് ശേഷം സ്റ്റാറ്റസ് മെസ്സേജ് മാറ്റുന്നു
+              document.getElementById('editStatus').textContent = "Data Reloaded. Redirecting...";
+              
+          }, 2500); // 2.5 സെക്കൻഡ് ഡിലേ
+          
+      } else if (text.includes('PROFILE_NOT_FOUND')) {
+          status.style.color = 'red';
+          status.textContent = 'Error: Profile not found. Please re-login.';
+      } else {
+          status.style.color = 'red';
+          status.textContent = 'Error updating profile: ' + text;
+      }
+  } catch(err) {
+      status.style.color = 'red';
+      status.textContent = 'Network error.';
+      console.error(err);
+  }
+}
+
+/* Change profile photo */
+function changePhoto() {
+  if (!loggedProfile) { alert('Please login first'); return; }
+
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    if (!confirm('Replace your profile photo?')) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target.result.split(',')[1];
+      const formData = new FormData();
+      formData.append('action','updatePhoto'); 
+      
+      appendUserIdentity(formData); 
+      
+      formData.append('photo', base64);
+      formData.append('photoName', file.name);
+      formData.append('photoType', file.type || 'image/jpeg');
+
+      const status = document.getElementById('myProfileStatus');
+      status.style.color = '#555';
+      status.textContent = 'Uploading photo... Please wait.';
+
+      try {
+        const res = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
+        const text = await res.text();
+        if (text.includes('PHOTO_UPDATED')) {
+          status.style.color = 'green';
+          status.textContent = 'Photo updated successfully. Reloading profile...';
+          
+          // ✅ ഇവിടെയാണ് പ്രധാന മാറ്റം
+          // 2.5 സെക്കൻഡിന് ശേഷം login() ഫംഗ്ഷൻ വിളിച്ച് പ്രൊഫൈൽ ഡാറ്റ വീണ്ടും ലോഡ് ചെയ്യുന്നു.
+          // (Google Sheets-ലെ അപ്ഡേറ്റ് CSV-യിൽ വരാനുള്ള സമയം നൽകുന്നു)
+          setTimeout(async () => {
+             // ഇവിടെ ലോഗിൻ വീണ്ടും വിളിക്കുന്നത് ഡാറ്റ വീണ്ടും സെർച്ച് ചെയ്ത് എടുക്കാൻ വേണ്ടിയാണ്.
+             // ലോഗിൻ ഫംഗ്ഷൻ 'pageSearch' ലേക്കാണ് പോകുന്നത്, അത് നിലവിലെ പേജ് ആണ്.
+             await login();
+             status.style.color = 'green';
+             status.textContent = 'Profile photo updated!';
+          }, 2500); // 2.5 സെക്കൻഡ് കാത്തിരിക്കുന്നു
+          
+        } else {
+          status.style.color = 'red';
+          status.textContent = 'Failed: ' + text;
+        }
+      } catch (e) {
+        status.style.color = 'red';
+        status.textContent = 'Network error';
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+/* Delete profile photo */
+async function deletePhoto() {
+  if (!loggedProfile) { alert('Please login first'); return; }
+  if (!confirm('Remove your profile photo?')) return;
+
+  const formData = new FormData();
+  // ✅ മാറ്റം: പുതിയ ആക്ഷൻ പേര് ഉപയോഗിക്കുന്നു
+  formData.append('action', 'deletePhoto'); // നിങ്ങളുടെ Apps Script കോഡിൽ ഇത് 'deletePhoto' എന്ന് തന്നെയാണ് പ്രതീക്ഷിക്കുന്നതെങ്കിൽ മാറ്റം വരുത്തേണ്ടതില്ല.
+                                            // 'deletePhotoByPhone' എന്നാണ് ഉപയോഗിക്കുന്നതെങ്കിൽ, അത് ഇവിടെ കൊടുക്കുക.
+  
+  appendUserIdentity(formData); 
+
+  const status = document.getElementById('myProfileStatus');
+  status.style.color = '#555';
+  status.textContent = 'Deleting photo...';
+
+  try {
+    const res = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
+    const text = await res.text();
+    if (text.includes('PHOTO_DELETED')) {
+      status.style.color = 'green';
+      status.textContent = 'Photo deleted';
+      document.getElementById('myProfilePhoto').src = "https://via.placeholder.com/150?text=No+Photo";
+    } else {
+      status.style.color = 'red';
+      status.textContent = 'Failed: ' + text;
+    }
+  } catch (e) {
+    status.style.color = 'red';
+    status.textContent = 'Network error';
+  }
+}
+
+/* Delete entire profile */
+async function deleteProfile() {
+  if (!loggedProfile) { alert('Please login first'); return; }
+  if (!confirm('⚠️ Delete your entire profile permanently? This cannot be undone.')) return;
+
+  const formData = new FormData();
+  // ✅ മാറ്റം: പുതിയ ആക്ഷൻ പേര് ഉപയോഗിക്കുന്നു
+  formData.append('action', 'deleteProfile'); // നിങ്ങളുടെ Apps Script കോഡിൽ ഇത് 'deleteProfile' എന്ന് തന്നെയാണ് പ്രതീക്ഷിക്കുന്നതെങ്കിൽ മാറ്റം വരുത്തേണ്ടതില്ല.
+                                              // 'deleteProfileByPhone' എന്നാണ് ഉപയോഗിക്കുന്നതെങ്കിൽ, അത് ഇവിടെ കൊടുക്കുക.
+  
+  appendUserIdentity(formData); 
+
+  const status = document.getElementById('myProfileStatus');
+  status.style.color = '#555';
+  status.textContent = 'Deleting profile...';
+
+  try {
+    const res = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
+    const text = await res.text();
+    if (text.includes('PROFILE_DELETED')) {
+      status.style.color = 'green';
+      status.textContent = 'Profile deleted.';
+      logout();
+    } else {
+      status.style.color = 'red';
+      status.textContent = 'Failed: ' + text;
+    }
+  } catch (e) {
+    status.style.color = 'red';
+    status.textContent = 'Network error';
+  }
+}
+
+  /* ========== UTILS ========== */
+  function calculateAge(dobString){
+    if(!dobString) return null;
+    // normalize digits in string
+    const s = (dobString||'').replace(/[^\d]/g,' ').trim().split(/\s+/);
+    if(s.length < 3) return null;
+    const [d,m,y] = s.map(x=>parseInt(x)||0);
+    if(!d || !m || !y) return null;
+    const birth = new Date(y, m-1, d);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const md = today.getMonth() - birth.getMonth();
+    if(md < 0 || (md===0 && today.getDate() < birth.getDate())) age--;
+    return age;
+  }
+  function escapeHtml(str){ 
+  if(!str) return ''; 
+  return String(str).replace(/[&<>"']/g, s => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[s]));
+}
+  
+  /* ✅ Helper: Only include phone for security-sensitive actions */
+  function appendUserIdentity(params) {
+    let phone = "";
+
+    try {
+      const saved = localStorage.getItem("loggedProfile");
+      if (saved) {
+        loggedProfile = JSON.parse(saved);
+        phone = (loggedProfile && loggedProfile["Your Phone Number"])
+          ? String(loggedProfile["Your Phone Number"]).trim()
+          : "";
+      } else {
+        console.warn("⚠️ No profile found in localStorage!");
+      }
+    } catch (err) {
+      console.error("Error loading profile from localStorage:", err);
+    }
+
+    if (!phone) {
+      alert("⚠️ Phone number missing. Please logout and login again.");
+      return params;
+    }
+
+    // ✅ Only append 'phone' (Used for server-side lookup/update)
+    if (params instanceof FormData) {
+      params.append("phone", phone);
+    } else if (params instanceof URLSearchParams) {
+      params.append("phone", phone);
+    } else {
+      console.warn("appendUserIdentity(): Unknown params type");
+    }
+
+    return params;
+  }
+
+
+
+  /* helper to go back to search from results */
+  function backToSearch(){ showPage('pageSearch'); }
+
+  /* Initialize — fill DOB selects and show login */
+  fillDobSelects(); // ✅ ഇവിടെയാണ് ഈ കോഡ് ചേർക്കേണ്ടത്
+  showPage('pageLogin');
+  
+  
+  </script>
+  </body>
+  </html>
