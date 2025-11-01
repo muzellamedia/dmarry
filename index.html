@@ -52,6 +52,23 @@
   <body>
   <div class="container">
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <style>
+        /* ഡിഫോൾട്ട് മാർജിൻ/പാഡിംഗ് നീക്കം ചെയ്യുന്നു */
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden; /* തിരശ്ചീനമായ സ്ക്രോൾ തടയുന്നു */
+        }
+    </style>
+</head>
+<body>
+
 <div id="pageLogin"
   style="
     /* ലോഗിൻ ബോക്സ് സെന്റർ ആക്കാനുള്ള സ്റ്റൈലുകൾ */
@@ -60,7 +77,7 @@
     align-items:center;
     /* മുഴുവൻ സ്ക്രീനിലും കാണാൻ */
     height:100vh;
-    width:100vw;
+    width:100vw; /* ബ്രൗസറിൻ്റെ മുഴുവൻ വീതിയും ഉപയോഗിക്കാൻ */
     margin:0;
     padding:0;
     /* ബാക്ക്ഗ്രൗണ്ട് ഇമേജ് */
@@ -74,16 +91,21 @@
     background:none; 
     padding:30px 25px;
     border-radius:15px;
-    /* വീതി 90% ൽ നിന്ന് 85% ആയി കുറച്ചു - കൂടുതൽ ഗ്യാപ്പിന് */
-    width:85%; 
-    /* എല്ലാ മൊബൈലിലും വൃത്തിയായി കാണാൻ പരമാവധി വീതി */
+    /* മുഴുവൻ വീതിയിൽ കാണിക്കാൻ 100% നൽകുന്നു, max-width നിയന്ത്രിക്കുന്നു */
+    width:100%; 
+    /* എല്ലാ മൊബൈലിലും വൃത്തിയായി കാണാൻ പരമാവധി വീതി (ഇത് നിങ്ങളുടെ ആവശ്യം അനുസരിച്ച് മാറ്റാം) */
     max-width:380px; 
     text-align:center;
     /* ടെക്സ്റ്റ് കളർ വൈറ്റ് */
     color:#fff; 
+    /* ചെറിയ ഷാഡോ നൽകി, ബോക്സിന് ഒരു ഡെപ്ത് നൽകുന്നു */
     box-shadow:0 8px 20px rgba(0,0,0,0.25); 
     backdrop-filter: blur(2px); 
     -webkit-backdrop-filter: blur(2px);
+    /* സൈഡുകളിൽ ഒരു നിശ്ചിത പാഡിംഗ് നൽകുന്നു, ഉള്ളടക്കം അരികുകളിൽ നിന്ന് അകറ്റാൻ */
+    padding-left: 25px;
+    padding-right: 25px;
+    box-sizing: border-box; /* padding ഉം border ഉം width-ൽ ഉൾപ്പെടുത്താൻ */
   ">
 
     <img src="https://lh3.googleusercontent.com/d/1pKfOnhW0cfZzRU8qkrcydfJeDWLMwB4e"
@@ -122,6 +144,9 @@
 
   </div>
 </div>
+
+</body>
+</html>
 
 
 
