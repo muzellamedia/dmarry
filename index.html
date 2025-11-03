@@ -50,6 +50,26 @@
   /* ... (മറ്റെന്തെങ്കിലും സ്റ്റൈലുകൾ ഉണ്ടെങ്കിൽ അതിനോട് ചേർക്കുക) */
 }
 
+/* നിങ്ങളുടെ നിലവിലുള്ള <style> സെക്ഷനിൽ ഇത് കൂടി ചേർക്കുക */
+
+/* ബ്രൗസറിൻ്റെ ഡിഫോൾട്ട് വാലിഡേഷൻ ഉപയോഗിച്ച് ഇൻവാലിഡ് ഫീൽഡുകൾക്ക് ചുവപ്പ് ബോർഡർ നൽകുന്നു */
+#regForm input:required:invalid:not(:focus),
+#regForm select:required:invalid:not(:focus),
+#regForm textarea:required:invalid:not(:focus) {
+    border: 2px solid var(--danger) !important; /* --danger എന്നത് ചുവപ്പ് നിറമാണ് */
+}
+
+/* ഫോക്കസ് ചെയ്യുമ്പോൾ ഡിഫോൾട്ട് ബോർഡർ നിലനിർത്തുന്നു */
+#regForm input:focus:invalid,
+#regForm select:focus:invalid,
+#regForm textarea:focus:invalid {
+    border-color: var(--primary) !important; /* ഫോക്കസ് ചെയ്യുമ്പോൾ നീല ബോർഡർ */
+}
+
+/* ടെക്സ്റ്റ്ഏരിയയിൽ ബോർഡർ വ്യക്തമായി കാണാൻ */
+#regForm textarea {
+    resize: vertical; /* വെർട്ടിക്കൽ വലുപ്പം മാറ്റാൻ മാത്രം അനുവദിക്കുന്നു */
+}
     /* Modal */
     .modal{display:none;position:fixed;z-index:2000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.9);align-items:center;justify-content:center;padding:20px}
     .modal img{max-width:100%;max-height:90vh;border-radius:8px}
@@ -320,24 +340,21 @@
 
     <label>Upload Your Photo</label>
     <input type="file" name="photoFile" accept="image/*">
+    
+    
 
-    <div class="btn-group" style="margin-top:20px">
+    <div id="status" style="text-align:center;margin-top:8px;"></div> <div class="btn-group" style="margin-top:20px">
       <button id="submitBtn" type="button" onclick="registerUser()">Submit</button>
       <button type="button" onclick="showPage('pageLogin')" style="background:#ccc;color:#000;">Back to Login</button>
     </div>
-
-    <div id="status" style="text-align:center;margin-top:8px;"></div>
   </form>
 </div>
 
-    <!-- SEARCH -->
-<div id="pageSearch" style="display:none;">
+  <div id="pageSearch" style="display:none;">
   <h2>🔍 Matrimony Profile Search</h2>
 
-  <div style="display:flex;flex-direction:column;gap:15px;max-width:400px;margin:auto;"> 
-    <!-- 👆 ഇനി 3 ലൈൻ ആയി column ആക്കി -->
+  <div class="search-form-container" style="max-width:400px;margin:auto;padding: 0 10px;"> 
     
-     <!-- Age -->
     <div>
       <label>Age</label><br>
       <div style="display:flex;gap:8px;">
@@ -352,35 +369,13 @@
     <div>
       <label>District</label><br>
       <select id="district" style="width:100%;">
-        <option value="">All</option>
-        <option>Thiruvananthapuram</option>
-        <option>Kollam</option>
-        <option>Pathanamthitta</option>
-        <option>Alappuzha</option>
-        <option>Kottayam</option>
-        <option>Idukki</option>
-        <option>Ernakulam</option>
-        <option>Thrissur</option>
-        <option>Palakkad</option>
-        <option>Malappuram</option>
-        <option>Kozhikode</option>
-        <option>Wayanad</option>
-        <option>Kannur</option>
-        <option>Kasaragod</option>
-      </select>
+        </select>
     </div>
 
     <div>
       <label>Disability</label><br>
       <select id="disability" style="width:100%;">
-        <option value="">All</option>
-        <option>Deaf</option>
-        <option>Blind</option>
-        <option>Physical Disabilities</option>
-        <option>Learning Disabilities</option>
-        <option>MR</option> <!-- 👈 ചേർത്തു -->
-        <option>Other Disabilities</option>
-      </select>
+        </select>
     </div>
   </div>
 
@@ -787,6 +782,12 @@ modal.addEventListener("click", (e) => {
             showPage('pageSearch');
             showMyProfile(match);
             
+              // ✅ ഇവിടെ പുതിയ കോഡ് ചേർക്കുക
+  setTimeout(() => {
+    window.scrollTo(0, 0); // നിർബന്ധമായും ടോപ്പിലേക്ക് സ്ക്രോൾ ചെയ്യുന്നു (Behavior: smooth ഒഴിവാക്കി)
+    console.log("Scrolled to top after login.");
+  }, 100); // 100ms ഡിലേ നൽകുന്നത് പേജ് റെൻഡർ ചെയ്തതിനു ശേഷം സ്ക്രോൾ ചെയ്യാൻ സഹായിക്കും
+            
             // Store necessary data in localStorage for action functions
             localStorage.setItem('loggedProfile', JSON.stringify({
                 "Your Phone Number": match["Your Phone Number"],
@@ -817,89 +818,157 @@ modal.addEventListener("click", (e) => {
       document.getElementById('year').value = "";
   }
 
-  /* ========== REGISTER ========== */
-  async function registerUser(){
-    const status = document.getElementById('status');
-    const form = document.getElementById('regForm');
+/* ========== REGISTER (FINAL UPDATED) ========== */
+async function registerUser(){
+  const statusDiv = document.getElementById('status'); // ബട്ടണിന് മുകളിലുള്ള സ്റ്റാറ്റസ് ഡിവിഷൻ
+  const form = document.getElementById('regForm');
+  const submitBtn = document.getElementById('submitBtn'); // സബ്മിറ്റ് ബട്ടൺ
 
-    if(!form.checkValidity()){
-      status.style.color = 'red';
-      status.textContent = 'Please fill required fields.';
-      return;
-    }
+  statusDiv.textContent = ""; // പഴയ മെസ്സേജ് മാറ്റുന്നു
+  
+  if(!form.checkValidity()){
+    statusDiv.style.color = 'red';
+    statusDiv.textContent = 'Please fill required fields.';
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // ഫോമിന്റെ മുകളിലേക്ക് സ്ക്രോൾ ചെയ്യുന്നു
+    return;
+  }
 
-    const fd = new FormData(form);
-    const fileInput = form.querySelector('input[name="photoFile"]');
-    const file = fileInput.files[0];
+  // 1. ബട്ടൺ സ്റ്റാറ്റസ്: Submitting...
+  const originalBtnText = submitBtn.textContent;
+  submitBtn.textContent = 'Submitting Pls Wait...';
+  submitBtn.disabled = true;
 
-    let base64 = "";
-    if(file){
-      const reader = await new Promise((res,rej)=>{
-        const r = new FileReader();
-        r.onload = e => res(e.target.result);
-        r.onerror = rej;
-        r.readAsDataURL(file);
-      });
-      base64 = reader.split(',')[1];
-    }
+  const fd = new FormData(form);
+  const fileInput = form.querySelector('input[name="photoFile"]');
+  const file = fileInput.files[0];
 
-    const params = new URLSearchParams();
-    for(const [k,v] of fd.entries()){
-      if(k === 'photoFile') continue;
-      params.append(k, v);
-    }
-    params.append('photo', base64);
-    params.append('photoName', file ? file.name : "");
-    params.append('photoType', file ? file.type : "");
-
-    try{
-      status.style.color = '#555';
-      status.textContent = 'Submitting...';
-      const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
-      const text = await res.text();
-      if(text.includes('ALREADY_REGISTERED')){
-        status.style.color = 'orange';
-        status.textContent = 'This phone number is already registered. Please login.';
-      } else if(text.includes('Success')){
-        status.style.color = 'green';
-        status.textContent = 'Registration successful — please login.';
-        form.reset();
-      } else {
-        status.style.color = 'red';
-        status.textContent = 'Error: ' + text;
-      }
-    } catch(err){
-      status.style.color = 'red';
-      status.textContent = 'Network error.';
-      console.error(err);
+  let base64 = "";
+  if(file){
+    try {
+        const reader = await new Promise((res,rej)=>{
+            const r = new FileReader();
+            r.onload = e => res(e.target.result);
+            r.onerror = rej;
+            r.readAsDataURL(file);
+        });
+        base64 = reader.split(',')[1];
+    } catch (e) {
+        // പരാജയം: ബട്ടൺ Submit എന്ന് തന്നെ നിലനിർത്തുന്നു
+        statusDiv.style.color = 'red';
+        statusDiv.textContent = 'Error reading file.';
+        submitBtn.textContent = originalBtnText; // Submit
+        submitBtn.disabled = false;
+        return;
     }
   }
 
-  /* ========== SEARCH ========== */
-  function applySearch(){
-    // if filteredProfiles empty (e.g. login didn't set), default to allProfiles
-    const pool = (filteredProfiles && filteredProfiles.length>0) ? filteredProfiles : allProfiles;
-    const ageMin = parseInt(document.getElementById('ageMin').value) || 18;
-    const ageMax = parseInt(document.getElementById('ageMax').value) || 99;
-    const district = (document.getElementById('district').value || "").toLowerCase();
-    const disability = (document.getElementById('disability').value || "").toLowerCase();
-
-    const results = pool.filter(p=>{
-      const age = parseInt(p.Age) || calculateAge(p['Date of Birth']);
-      const dist = (p.District||"").toLowerCase();
-      const dis = (p['Disability Details']||"").toLowerCase();
-      const ageOk = age >= ageMin && age <= ageMax;
-      const distOk = !district || dist === district;
-      const disOk = !disability || dis.includes(disability);
-      return ageOk && distOk && disOk;
-    });
-
-    // set for pagination/display
-    filteredProfiles = results;
-    currentPage = 1;
-    showPage('pageResults');
-    displayProfiles();
+  const params = new URLSearchParams();
+  for(const [k,v] of fd.entries()){
+    if(k === 'photoFile') continue;
+    params.append(k, v);
   }
+  params.append('photo', base64);
+  params.append('photoName', file ? file.name : "");
+  params.append('photoType', file ? file.type : "");
+
+  try{
+    const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
+    const text = await res.text();
+
+    if(text.includes('ALREADY_REGISTERED')){
+      // 2. പരാജയം: ബട്ടൺ Submit എന്ന് തന്നെ നിലനിർത്തുന്നു
+      submitBtn.textContent = originalBtnText; // Submit
+      submitBtn.disabled = false; 
+      
+      // 3. മെസ്സേജ്: മുകളിൽ
+      statusDiv.style.color = 'orange';
+      statusDiv.textContent = 'This phone number is already registered. Please login.';
+      
+    } else if(text.includes('Success')){
+      
+      // 2. വിജയം: ബട്ടൺ Submitted എന്ന് കാണിക്കുന്നു
+      submitBtn.textContent = 'Submitted';
+      
+      // 3. മെസ്സേജ്: മുകളിൽ
+      statusDiv.style.color = 'green';
+      statusDiv.style.fontWeight = 'bold';
+      statusDiv.textContent = 'Registration successful! Please login.';
+      
+      // ഫോം റീസെറ്റ് ചെയ്യുന്നു
+      form.reset(); 
+      // ബട്ടൺ വീണ്ടും പഴയപോലെയാകാൻ കുറച്ച് സമയം നൽകുന്നു
+      setTimeout(() => {
+        submitBtn.textContent = originalBtnText; // Submit
+        submitBtn.disabled = false;
+        statusDiv.style.fontWeight = 'normal';
+      }, 3000); 
+      
+    } else {
+      // 2. പരാജയം: ബട്ടൺ Submit എന്ന് തന്നെ നിലനിർത്തുന്നു
+      submitBtn.textContent = originalBtnText; // Submit
+      submitBtn.disabled = false; 
+      
+      // 3. മെസ്സേജ്: മുകളിൽ
+      statusDiv.style.color = 'red';
+      statusDiv.textContent = 'Error: ' + text;
+    }
+    // മെസ്സേജ് കാണിച്ച ശേഷം മുകളിലേക്ക് സ്ക്രോൾ ചെയ്യുന്നു
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+  } catch(err){
+    // 2. പരാജയം: ബട്ടൺ Submit എന്ന് തന്നെ നിലനിർത്തുന്നു
+    submitBtn.textContent = originalBtnText; // Submit
+    submitBtn.disabled = false;
+    
+    // 3. മെസ്സേജ്: മുകളിൽ
+    statusDiv.style.color = 'red';
+    statusDiv.textContent = 'Network error.';
+    console.error(err);
+  }
+}
+
+  /* ========== SEARCH (UPDATED) ========== */
+function applySearch(){
+  if (!loggedProfile) {
+    alert("Please login first to search.");
+    showPage('pageLogin');
+    return;
+  }
+  
+  // 1. ലോഗിൻ ചെയ്ത യൂസറുടെ വിവരങ്ങൾ എടുക്കുന്നു
+  const loggedReligion = (loggedProfile.Religion || "").toLowerCase();
+  const loggedGender = (loggedProfile.Gender || "").toLowerCase();
+  const oppositeGender = (loggedGender === "male") ? "female" : "male";
+
+  // 2. എല്ലാ പ്രൊഫൈലുകളിൽ നിന്നും Opposite Gender-ഉം Same Religion-ഉം ഫിൽട്ടർ ചെയ്യുന്നു
+  const basePool = allProfiles.filter(p => {
+    return ((p.Gender || "").toLowerCase() === oppositeGender) &&
+           ((p.Religion || "").toLowerCase() === loggedReligion);
+  });
+  
+  // 3. തിരയൽ ഫിൽട്ടറുകൾ എടുക്കുന്നു
+  const ageMin = parseInt(document.getElementById('ageMin').value) || 18;
+  const ageMax = parseInt(document.getElementById('ageMax').value) || 99;
+  const district = (document.getElementById('district').value || "").toLowerCase();
+  const disability = (document.getElementById('disability').value || "").toLowerCase();
+
+  // 4. Base Pool-ൽ (Opposite Gender & Same Religion) തിരയൽ ഫിൽട്ടറുകൾ പ്രയോഗിക്കുന്നു
+  const results = basePool.filter(p=>{
+    const age = parseInt(p.Age) || calculateAge(p['Date of Birth']);
+    const dist = (p.District||"").toLowerCase();
+    const dis = (p['Disability Details']||"").toLowerCase();
+    const ageOk = age >= ageMin && age <= ageMax;
+    const distOk = !district || dist === district;
+    const disOk = !disability || dis.includes(disability);
+    return ageOk && distOk && disOk;
+  });
+
+  // set for pagination/display
+  filteredProfiles = results;
+  currentPage = 1;
+  showPage('pageResults');
+  displayProfiles();
+}
 
   /* ========== DISPLAY / PAGINATION ========== */
   function displayProfiles(){
