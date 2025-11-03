@@ -369,13 +369,35 @@
     <div>
       <label>District</label><br>
       <select id="district" style="width:100%;">
-        </select>
+        <option value="">All</option>
+        <option>Thiruvananthapuram</option>
+        <option>Kollam</option>
+        <option>Pathanamthitta</option>
+        <option>Alappuzha</option>
+        <option>Kottayam</option>
+        <option>Idukki</option>
+        <option>Ernakulam</option>
+        <option>Thrissur</option>
+        <option>Palakkad</option>
+        <option>Malappuram</option>
+        <option>Kozhikode</option>
+        <option>Wayanad</option>
+        <option>Kannur</option>
+        <option>Kasaragod</option>
+      </select>
     </div>
 
     <div>
       <label>Disability</label><br>
       <select id="disability" style="width:100%;">
-        </select>
+        <option value="">All</option>
+        <option>Deaf</option>
+        <option>Blind</option>
+        <option>Physical Disabilities</option>
+        <option>Learning Disabilities</option>
+        <option>MR</option> <!-- 👈 ചേർത്തു -->
+        <option>Other Disabilities</option>
+      </select>
     </div>
   </div>
 
@@ -387,6 +409,7 @@
   <div class="notice">Tip: Leave fields empty to include all.</div>
 </div>
 <script>
+
   // ✅ Fill age dropdowns 18–65 dynamically
   const minSel = document.getElementById('ageMin');
   const maxSel = document.getElementById('ageMax');
@@ -661,14 +684,19 @@ function showPage(id){
     if(el) el.style.display = (pid===id) ? "block" : "none";
   });
   
-  // ✅ ഇവിടെ മാറ്റം വരുത്തി
   const myProfileEl = document.getElementById('myProfileSection');
   if(myProfileEl) {
-      // 'pageSearch' എന്ന പേജിൽ മാത്രം പ്രൊഫൈൽ കാണിക്കുക, മറ്റ് പേജുകളിൽ ഹൈഡ് ചെയ്യുക.
       myProfileEl.style.display = (id === 'pageSearch' && loggedProfile) ? 'block' : 'none'; 
   }
   
-  window.scrollTo({top:0,behavior:'smooth'});
+  // ✅ 1. ഉടൻ തന്നെ ഒരു സ്ക്രോൾ ചെയ്യുന്നു
+  window.scrollTo(0, 0); // No smooth behavior here
+  
+  // ✅ 2. 50 മില്ലിസെക്കൻഡ് കഴിഞ്ഞ് വീണ്ടും സ്ക്രോൾ ചെയ്യുന്നു (ഇതാണ് പ്രശ്നം പരിഹരിക്കുന്നത്)
+  // ബ്രൗസർ റെൻഡറിംഗ് പൂർത്തിയാക്കാൻ സമയം നൽകുന്നു.
+  setTimeout(() => {
+    window.scrollTo(0, 0); // നിർബന്ധമായും ടോപ്പിലേക്ക് സ്ക്രോൾ ചെയ്യുന്നു
+  }, 50);
 }
   /* Fill day/month/year selects (used in login + register) */
   function fillDobSelects(){
