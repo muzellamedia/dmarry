@@ -350,6 +350,23 @@
   </form>
 </div>
 
+
+<div id="pageInterests" style="display:none">
+  <h2 id="interestListTitle">📥 Received Interests</h2>
+
+  <div style="margin-bottom:10px;text-align:center">
+    <button onclick="showPage('pageSearch')">Back to Search</button> 
+    <button onclick="logout()" style="background:#dc3545;margin-left:8px">Logout</button>
+  </div>
+  
+  <div class="results" id="interestResults"></div> 
+  
+  <div class="pagination" id="interestPagination"></div> 
+  
+  <div class="footer-text" style="margin-top:14px">ഭിന്നശേഷിക്കാർക്ക് വിവാഹമെന്ന സ്വപ്നം പൂവണിയാൻ സൗജന്യ വെബ്സൈറ്റ് — Website design by SUNEER PARAMBIL</div>
+</div>
+
+
   <div id="pageSearch" style="display:none;">
   <h2>🔍 Matrimony Profile Search</h2>
 
@@ -467,8 +484,27 @@
             style="background:#dc3545;color:#fff;border:none;border-radius:12px;padding:15px 10px;font-weight:bold;
                    cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,0.2);">
       ❌<br>Delete Profile
+      <div class="actions-grid" 
+       style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px;">
+    
+    <button class="action-box" onclick="showInterestList('received')" 
+            style="background:#00695c;color:#fff;border-radius:12px;padding:15px 10px;font-weight:bold;cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,0.2);">
+      📥<br>Received Interests
+    </button>
+
+    <button class="action-box" onclick="showInterestList('accepted')" 
+            style="background:#007bff;color:#fff;border-radius:12px;padding:15px 10px;font-weight:bold;cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,0.2);">
+      🤝<br>Accepted Interests
     </button>
   </div>
+
+  <div id="interestListContainer" style="margin-top:20px; display:none;">
+    <h3 id="interestListHeading" style="text-align:center; color:#0056b3; margin-bottom:15px;"></h3>
+    <div id="interestListContent" style="padding:15px; background:#f5f5f5; border-radius:8px;">
+      </div>
+    <button onclick="hideInterestList()" style="margin-top:10px; background:#6c757d; display:block; width:100%;" class="small-btn">Close List</button>
+  </div>
+ 
 
   <p id="myProfileStatus" style="text-align:center;color:#666;font-size:14px;margin-top:5px;"></p>
 
@@ -666,7 +702,7 @@ modal.addEventListener('click', () => {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script>
   /* ========== CONFIG ========== */
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2tfPLs4XbkhijnDzAVktRbtL26FFHtdnGH-zvW3py6LfTaU6JkS156se4BHYvmlJM/exec"; // <-- set your script URL
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwxO9tcZZ9K72Xq4O4JzCi20Jog5n1H8gpKKBnfqlZMJJN0EXHPpkWDOCDAGAgX7M4m/exec"; // <-- set your script URL
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHJLHXWQaMioqSExrL-vdbu65_py6Ti9KzPtkxXaMaj9CygZ9OFH1a3ne7rCQ0_fF_KhNc-OiPDmvo/pub?output=csv"; // your published CSV
 
   /* ========== STATE ========== */
@@ -676,10 +712,14 @@ modal.addEventListener('click', () => {
   const profilesPerPage = 10;
   let loggedProfile = null;    // object for logged-in user (row)
   let loggedInGender = "";
+  
+  let interestsList = [];        // Received/Accepted Interest List profiles
+let currentInterestPage = 1;   // Interest List ൻ്റെ പേജിനേഷൻ
+const interestProfilesPerPage = 10; // ഒരു പേജിൽ 10 പ്രൊഫൈലുകൾ
 
   /* ========== Helpers ========== */
 function showPage(id){
-  ["pageLogin","pageRegister","pageSearch","pageResults", "pageEdit"].forEach(pid=>{ 
+  ["pageLogin","pageRegister","pageSearch","pageResults", "pageEdit", "pageInterests"].forEach(pid=>{ 
     const el = document.getElementById(pid);
     if(el) el.style.display = (pid===id) ? "block" : "none";
   });
@@ -1022,29 +1062,75 @@ function applySearch(){
       const photoHtml = photoUrl
         ? `<img src="${photoUrl}" alt="photo" onclick="openModal('${photoUrl.replace(/'/g, "\\'")}')">`
         : `<div class="no-photo">No Photo</div>`;
+          // ✅ Interest ബട്ടൺ ചേർക്കുന്നു. (താൽപര്യമുള്ള പ്രൊഫൈലിൻ്റെ ഫോൺ നമ്പർ ഫംഗ്ഷനിലേക്ക് പാസ് ചെയ്യുന്നു)
+        const recipientPhone = p['Your Phone Number'] || 'N/A';
+    
+    // ✅ ഇവിടെ ചെക്ക് ചെയ്യുന്നു
+    let buttonHtml = '';
+    if (interestsSentByMe.has(recipientPhone)) {
+        // Interest അയച്ചിട്ടുണ്ട്
+        buttonHtml = `
+            <button class="action-btn" disabled 
+                    style="background:#6c757d; padding: 10px 18px; border-radius: 5px; font-weight: bold;">
+              Interest Sent ✔️
+            </button>
+            <p id="interestStatus-${recipientPhone}" style="font-size:12px; margin-top:5px; color:#555;">Already sent.</p>
+        `;
+    } else {
+        // Interest അയച്ചിട്ടില്ലെങ്കിൽ, send ബട്ടൺ കാണിക്കുന്നു
+        buttonHtml = `
+            <button class="action-btn" 
+                    onclick="sendInterest('${recipientPhone}')" 
+                    style="background:#00b050; padding: 10px 18px; border-radius: 5px; font-weight: bold;">
+              Send Interest ❤️
+            </button>
+            <p id="interestStatus-${recipientPhone}" style="font-size:12px; margin-top:5px; color:#555;"></p>
+        `;
+    }
 
-      card.innerHTML = `
+    card.innerHTML = `
         ${photoHtml}
         <div class="info">
-          <b>Name:</b> ${p.Name||''}<br>
-          <b>Age:</b> ${calculateAge(p['Date of Birth']) || 'N/A'}<br>
-          <b>Gender:</b> ${p.Gender||''}<br>
-          <b>Religion:</b> ${p.Religion||''}<br>
-          <b>Caste:</b> ${p.Caste||''}<br>
-          <b>Disability:</b> ${p['Disability Details']||''}<br>
-          <b>Education:</b> ${p.Education||''}<br>
-          <b>Job:</b> ${p.Job||''}<br>
-          <b>Marital Status:</b> ${p['Marital Status']||''}<br>
-          <b>Full Address:</b> ${p['Full Address']||''}<br>
-          <b>District:</b> ${p.District||''}<br>
-          <b>Contact 1:</b> ${p['Contact Number 1']||''}<br>
-          <b>Contact 2:</b> ${p['Contact Number 2']||''}<br>
-          <b>About Me:</b> ${p['About Me']||''}<br>
-        </div>`;
-      resultsDiv.appendChild(card);
-    });
+            </div>
+        
+        <div style="text-align:center; margin-top:10px;">
+          ${buttonHtml} 
+        </div>
+        `;
+    resultsDiv.appendChild(card);
 
-    const paginationDiv = document.getElementById("pagination");
+      card.innerHTML = `
+  ${photoHtml}
+  <div class="info">
+    <b>Name:</b> ${p.Name||''}<br>
+    <b>Age:</b> ${calculateAge(p['Date of Birth']) || 'N/A'}<br>
+    <b>Gender:</b> ${p.Gender||''}<br>
+    <b>Religion:</b> ${p.Religion||''}<br>
+    <b>Caste:</b> ${p.Caste||''}<br>
+    <b>Disability:</b> ${p['Disability Details']||''}<br>
+    <b>Education:</b> ${p.Education||''}<br>
+    <b>Job:</b> ${p.Job||''}<br>
+    <b>Marital Status:</b> ${p['Marital Status']||''}<br>
+    <b>Full Address:</b> ${p['Full Address']||''}<br>
+    <b>District:</b> ${p.District||''}<br>
+    <b>Contact 1:</b> ${p['Contact Number 1']||''}<br>
+    <b>Contact 2:</b> ${p['Contact Number 2']||''}<br>
+    <b>About Me:</b> ${p['About Me']||''}<br>
+  </div>
+  <div style="text-align:center; margin-top:10px;">
+    <button class="action-btn" 
+            onclick="sendInterest('${recipientPhone}')" 
+            style="background:#00b050; padding: 10px 18px; border-radius: 5px; font-weight: bold;">
+      Send Interest ❤️
+    </button>
+    <p id="interestStatus-${recipientPhone}" style="font-size:12px; margin-top:5px; color:#555;"></p>
+  </div>
+`;
+      
+    resultsDiv.appendChild(card);
+  }); // ✅ ഇവിടെ ഫോർ ഈച്ച് ക്ലോസ് ചെയ്യുന്നു.
+
+  const paginationDiv = document.getElementById("pagination");
     paginationDiv.innerHTML = `<button onclick="prevPage()">Previous</button> Page ${currentPage} of ${Math.ceil(list.length / profilesPerPage)} <button onclick="nextPage()">Next</button>`;
   }
 
@@ -1400,7 +1486,281 @@ async function deleteProfile() {
   fillDobSelects(); // ✅ ഇവിടെയാണ് ഈ കോഡ് ചേർക്കേണ്ടത്
   showPage('pageLogin');
   
-  
+ /* ========== INTEREST LIST DISPLAY CONTROLS (FIXED) ========== */
+
+function showInterestList(type) {
+    if (!loggedProfile) { 
+        alert("Please login first."); 
+        showPage('pageLogin');
+        return; 
+    }
+
+    // ✅ ഇതാണ് ശരിയായ സ്ഥാനം
+    currentInterestListType = type; // 'received' or 'accepted'
+
+    // ✅ പുതിയ പേജിലേക്ക് പോകുന്നു
+    showPage('pageInterests'); 
+    
+    // ഹെഡിംഗ് സെറ്റ് ചെയ്യുന്നു
+    const title = (type === 'received') ? '📥 Received Interests' : '🤝 Accepted Interests';
+    document.getElementById('interestListTitle').textContent = title;
+    
+    // ഡാറ്റ ലോഡ് ചെയ്യാൻ വിളിക്കുന്നു
+    loadAndDisplayInterests(type); 
+}
+
+/* ========== LOAD AND DISPLAY INTERESTS (DATA FETCHER) ========== */
+async function loadAndDisplayInterests(type) {
+    const phone = loggedProfile['Your Phone Number'];
+    const resultsDiv = document.getElementById("interestResults"); 
+    
+    resultsDiv.innerHTML = "<p style='text-align:center; color: #007bff;'>Loading profiles, please wait...</p>";
+    document.getElementById("interestPagination").innerHTML = "";
+
+    const params = new URLSearchParams();
+    params.append('action', 'getInterestsList'); 
+    params.append('userPhone', phone);
+    params.append('listType', type); 
+
+    try {
+        const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
+        const text = await res.text();
+        
+        let interestProfiles;
+        try {
+            interestProfiles = JSON.parse(text); 
+        } catch (e) {
+            interestsList = [];
+            resultsDiv.innerHTML = `<p style='color:red; text-align:center;'>Error loading data: ${text || "Invalid response."}</p>`;
+            displayInterestProfiles(); // Error വന്നാൽ empty list കാണിക്കും
+            return;
+        }
+        
+        interestsList = interestProfiles || []; 
+        currentInterestPage = 1;
+        displayInterestProfiles(type); 
+        
+    } catch (e) {
+        interestsList = [];
+        console.error(e);
+        resultsDiv.innerHTML = `<p style='color:red; text-align:center;'>Network Error fetching data.</p>`;
+        displayInterestProfiles();
+    }
+}
+/* ========== ACCEPT INTEREST ========== */
+async function acceptInterest(senderPhone) {
+    if (!loggedProfile) { return; }
+    if (!confirm('Accept this interest? Their contact details will be shared.')) return;
+    
+    const recipientPhone = loggedProfile['Your Phone Number'];
+    
+    const params = new URLSearchParams();
+    params.append('action', 'acceptInterest'); // Apps Script-ൽ ഈ action ആണ് പ്രോസസ്സ് ചെയ്യേണ്ടത്
+    params.append('senderPhone', senderPhone);
+    params.append('recipientPhone', recipientPhone); 
+
+    try {
+        const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
+        const text = await res.text();
+        
+        if (text.includes('INTEREST_ACCEPTED')) {
+            alert('Interest accepted! You can now see their details in Accepted Interests list.');
+            // അക്സപ്റ്റ് ചെയ്ത ശേഷം ലിസ്റ്റ് റീലോഡ് ചെയ്യുന്നു
+            showInterestList('received'); 
+        } else {
+            alert('Error accepting interest: ' + text);
+        }
+    } catch (e) {
+        alert('Network Error during acceptance.');
+    }
+}
+/* ========== DISPLAY INTEREST PROFILES (PAGINATED VIEW) ========== */
+function displayInterestProfiles(listType = 'received'){
+    const list = interestsList || [];
+    const resultsDiv = document.getElementById("interestResults");
+    resultsDiv.innerHTML = "";
+
+    if(list.length === 0){
+      resultsDiv.innerHTML = `<p style='text-align:center; color:#0056b3;'>No ${listType === 'received' ? 'new' : 'accepted'} interests found.</p>`;
+      document.getElementById("interestPagination").innerHTML = "";
+      return;
+    }
+
+    const start = (currentInterestPage - 1) * interestProfilesPerPage;
+    const end = start + interestProfilesPerPage;
+    const pageProfiles = list.slice(start, end);
+
+    pageProfiles.forEach(p => {
+        const card = document.createElement("div");
+        card.className = "card";
+        
+        const photoUrl = convertDriveLink(p["Photo Link"] || p["Upload Your Photo"] || "");
+        const photoHtml = photoUrl
+            ? `<img src="${photoUrl}" alt="photo" onclick="openModal('${photoUrl.replace(/'/g, "\\'")}')">`
+            : `<div class="no-photo">No Photo</div>`;
+
+        // Interest സ്വീകരിക്കാനുള്ള ബട്ടൺ (Received ലിസ്റ്റിൽ മാത്രം കാണിക്കുന്നു)
+        const recipientPhone = p['Your Phone Number'] || 'N/A';
+        const actionButton = (listType === 'received') 
+            ? `<button onclick="acceptInterest('${recipientPhone}')" class="small-btn" style="background:#28a745; width:100%;">Accept Interest</button>`
+            : ``; 
+        
+        // Accepted ലിസ്റ്റിൽ മാത്രം കോൺടാക്റ്റ് നമ്പർ കാണിക്കുന്നു
+        const contactDetail = (listType === 'accepted') 
+            ? `<b>Contact 1:</b> ${p['Contact Number 1']||''}<br>` 
+            : ``; 
+
+        card.innerHTML = `
+  ${photoHtml}
+  <div class="info">
+    <b>Name:</b> ${p.Name||''}<br>
+    <b>Age:</b> ${calculateAge(p['Date of Birth']) || 'N/A'}<br>
+    <b>Gender:</b> ${p.Gender||''}<br>
+    <b>Religion:</b> ${p.Religion||''}<br>
+    <b>Caste:</b> ${p.Caste||''}<br>
+    <b>Disability:</b> ${p['Disability Details']||''}<br>
+    <b>Education:</b> ${p.Education||''}<br>
+    <b>Job:</b> ${p.Job||''}<br>
+    <b>Marital Status:</b> ${p['Marital Status']||''}<br>
+    <b>Full Address:</b> ${p['Full Address']||''}<br>
+    <b>District:</b> ${p.District||''}<br>
+    <b>Contact 1:</b> ${p['Contact Number 1']||''}<br>
+    <b>Contact 2:</b> ${p['Contact Number 2']||''}<br>
+    <b>About Me:</b> ${p['About Me']||''}<br>
+  </div>
+            <div style="text-align:center; margin-top:10px;">
+               ${actionButton}
+            </div>`;
+        resultsDiv.appendChild(card);
+    });
+
+    // പേജിനേഷൻ ബട്ടണുകൾ
+    const paginationDiv = document.getElementById("interestPagination");
+    const totalPages = Math.ceil(list.length / interestProfilesPerPage);
+    paginationDiv.innerHTML = `
+        <button onclick="prevInterestPage()" ${currentInterestPage === 1 ? 'disabled' : ''}>Previous</button> 
+        Page ${currentInterestPage} of ${totalPages} 
+        <button onclick="nextInterestPage()" ${currentInterestPage === totalPages ? 'disabled' : ''}>Next</button>`;
+} 
+/* ========== SEND INTEREST FUNCTION ========== */
+async function sendInterest(recipientPhone) {
+    if (!loggedProfile) { 
+        alert("Please login first to send interest."); 
+        showPage('pageLogin');
+        return; 
+    }
+    
+    // Interest അയക്കുന്നയാളുടെ ഫോൺ നമ്പർ
+    const senderPhone = loggedProfile['Your Phone Number']; 
+    const senderName = loggedProfile['Name'];
+    const statusEl = document.getElementById(`interestStatus-${recipientPhone}`);
+    
+    // സ്വയം Interest അയക്കുന്നത് തടയുന്നു
+    if (senderPhone === recipientPhone) {
+        statusEl.style.color = 'red';
+        statusEl.textContent = 'Cannot send interest to yourself!';
+        return;
+    }
+
+    // UI Feedback: ബട്ടൺ ഡിസേബിൾ ചെയ്യുന്നു
+    const btn = statusEl.previousElementSibling;
+    const originalText = btn.textContent;
+    btn.textContent = 'Sending...';
+    btn.disabled = true;
+
+    // Apps Script ലേക്ക് അയക്കാനുള്ള ഡാറ്റ
+    const params = new URLSearchParams();
+    params.append('action', 'sendInterest'); 
+    params.append('senderPhone', senderPhone);
+    params.append('recipientPhone', recipientPhone);
+    params.append('senderName', senderName); // Apps Script-ൽ ഉപയോഗിക്കുന്നില്ലെങ്കിലും അയക്കാം
+    
+    try {
+        // ⚠️ SCRIPT_URL ശരിയാണോ എന്ന് ഉറപ്പാക്കുക 
+        const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
+        const text = await res.text();
+
+        if (text.includes('INTEREST_SENT')) {
+            statusEl.style.color = 'green';
+            statusEl.textContent = 'Interest Sent Successfully!';
+            btn.textContent = 'Interest Sent';
+            btn.disabled = true; 
+        } else if (text.includes('ALREADY_SENT')) {
+            statusEl.style.color = 'orange';
+            statusEl.textContent = 'Interest already sent!';
+            btn.textContent = 'Already Sent';
+            btn.disabled = true;
+        } else {
+            // Apps Script എറർ മെസ്സേജ്
+            statusEl.style.color = 'red';
+            statusEl.textContent = 'Error: ' + text; 
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+    } catch (e) {
+        statusEl.style.color = 'red';
+        statusEl.textContent = 'Network Error.';
+        btn.textContent = originalText;
+        btn.disabled = false;
+        console.error("Fetch Error:", e);
+    }
+}
+/* ========== INTEREST PAGINATION LOGIC ========== */
+function nextInterestPage(){
+    if(currentInterestPage < Math.ceil(interestsList.length / interestProfilesPerPage)){
+      currentInterestPage++;
+      // നിലവിൽ കാണിക്കുന്ന ലിസ്റ്റ് ഏതെന്ന് കണ്ടെത്തി വീണ്ടും വിളിക്കുന്നു
+      const currentType = document.getElementById('interestListTitle').textContent.includes('Received') ? 'received' : 'accepted';
+      displayInterestProfiles(currentType);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+function prevInterestPage(){
+    if(currentInterestPage > 1){
+      currentInterestPage--;
+      const currentType = document.getElementById('interestListTitle').textContent.includes('Received') ? 'received' : 'accepted';
+      displayInterestProfiles(currentType);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+/* ========== NEW STATE VARIABLE ========== */
+let interestsSentByMe = new Set(); // ഞാൻ അയച്ച interest-ൻ്റെ phone number-കൾ
+
+/* ========== LOAD SENT INTERESTS AFTER LOGIN ========== */
+async function loadSentInterests() {
+    if (!loggedProfile) return;
+    
+    const senderPhone = loggedProfile['Your Phone Number'];
+    
+    const params = new URLSearchParams();
+    params.append('action', 'getSentInterests'); 
+    params.append('senderPhone', senderPhone);
+
+    try {
+        const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
+        const text = await res.text();
+        
+        let recipientPhones;
+        try {
+            recipientPhones = JSON.parse(text); 
+        } catch (e) {
+            console.error("Error parsing sent interests list:", text);
+            return;
+        }
+        
+        // Set-ൽ സേവ് ചെയ്യുന്നു (ഇതാണ് ഏറ്റവും പ്രധാനം)
+        interestsSentByMe = new Set(recipientPhones);
+        
+        // ഡാറ്റ ലോഡ് ചെയ്ത ശേഷം നിലവിലെ സെർച്ച് റിസൾട്ടുകൾ വീണ്ടും കാണിക്കുന്നു (അല്ലെങ്കിൽ പേജ് റീലോഡ് ചെയ്യുന്നു)
+        if (document.getElementById('pageSearch').style.display === 'block') {
+             displayProfiles(); 
+        }
+
+    } catch (e) {
+        console.error("Network Error fetching sent interests.", e);
+    }
+}
   </script>
   </body>
   </html>
