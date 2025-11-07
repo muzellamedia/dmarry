@@ -165,6 +165,47 @@
   </div>
 </div>
 
+<!-- 🔵 GLOBAL LOADING POPUP -->
+<div id="loadingPopup" style="
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.8);
+  z-index:9999;
+  justify-content:center;
+  align-items:center;
+  color:#fff;
+  font-size:20px;
+  font-weight:bold;
+  text-align:center;
+">
+  <div style="
+    background:#111;
+    padding:25px 30px;
+    border-radius:10px;
+    box-shadow:0 0 10px rgba(255,255,255,0.3);
+  ">
+    <div id="loadingText">Processing...</div>
+    <div style="margin-top:15px; font-size:14px; color:#ccc;">Please wait...</div>
+  </div>
+</div>
+
+<script>
+function showLoadingPopup(message){
+  const popup = document.getElementById('loadingPopup');
+  document.getElementById('loadingText').innerText = message || "Please wait...";
+  popup.style.display = 'flex';
+  document.body.style.pointerEvents = 'none'; // disable all clicks
+}
+
+function hideLoadingPopup(){
+  const popup = document.getElementById('loadingPopup');
+  popup.style.display = 'none';
+  document.body.style.pointerEvents = 'auto'; // enable again
+}
+</script>
+
 </body>
 </html>
 
@@ -702,20 +743,22 @@ modal.addEventListener('click', () => {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script>
   /* ========== CONFIG ========== */
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwxO9tcZZ9K72Xq4O4JzCi20Jog5n1H8gpKKBnfqlZMJJN0EXHPpkWDOCDAGAgX7M4m/exec"; // <-- set your script URL
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzU2Xjde15GWt4QZMjjndkUuPhIEj8ZiOwdr6fyxgJOnqhiCCoOlu8b7MxU1QnZiFo/exec"; // <-- set your script URL
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHJLHXWQaMioqSExrL-vdbu65_py6Ti9KzPtkxXaMaj9CygZ9OFH1a3ne7rCQ0_fF_KhNc-OiPDmvo/pub?output=csv"; // your published CSV
 
-  /* ========== STATE ========== */
-  let allProfiles = [];        // all rows from CSV
-  let filteredProfiles = [];   // search results
-  let currentPage = 1;
-  const profilesPerPage = 10;
-  let loggedProfile = null;    // object for logged-in user (row)
-  let loggedInGender = "";
-  
-  let interestsList = [];        // Received/Accepted Interest List profiles
-let currentInterestPage = 1;   // Interest List ൻ്റെ പേജിനേഷൻ
+/* ========== STATE ========== */
+let allProfiles = [];        // all rows from CSV
+let filteredProfiles = [];   // search results
+let currentPage = 1;
+const profilesPerPage = 10;
+let loggedProfile = null;    // object for logged-in user (row)
+let loggedInGender = "";
+
+let interestsList = [];        // Received/Accepted Interest List profiles
+let currentInterestPage = 1;   // Interest List ന്‍റെ പേജിനേഷൻ
 const interestProfilesPerPage = 10; // ഒരു പേജിൽ 10 പ്രൊഫൈലുകൾ
+let currentInterestListType = ""; 
+
 
   /* ========== Helpers ========== */
 function showPage(id){
@@ -786,8 +829,8 @@ modal.addEventListener("click", (e) => {
 
  
 
-  /* ========== LOGIN - (UPDATED) ========== */
-  async function login(){
+ /* ========== LOGIN - (FINAL UPDATED WITH SENT INTEREST LOADER) ========== */
+async function login(){
     const phone = document.getElementById('phone').value.trim();
     const day = document.getElementById('day').value;
     const month = document.getElementById('month').value;
@@ -795,83 +838,100 @@ modal.addEventListener("click", (e) => {
     const err = document.getElementById('error');
     err.textContent = "";
 
-    if(!phone){ err.textContent = "Please enter phone number."; return; }
-    if(!day || !month || !year){ err.textContent = "Please select full date of birth."; return; }
-    
-    // User-entered DOB: Ensure it's in a clean, consistent format like "1/1/1990"
+    if (!phone) { 
+        err.textContent = "Please enter phone number."; 
+        return; 
+    }
+    if (!day || !month || !year) { 
+        err.textContent = "Please select full date of birth."; 
+        return; 
+    }
+
+    // User-entered DOB
     const enteredDob = `${parseInt(day)}/${parseInt(month)}/${year}`;
     const enteredDobClean = enteredDob.replace(/[^\d]/g, "/").replace(/\s+/g, "").trim();
 
-    try{
-      const res = await fetch(SHEET_CSV_URL);
-      const csv = await res.text();
-      Papa.parse(csv,{
-        header: true,
-        skipEmptyLines: true,
-        complete(results){
-          allProfiles = results.data || [];
-          
-          const match = allProfiles.find(p=>{
-            const phoneDb = (p["Your Phone Number"]||"").trim();
-            const dobDb = (p["Date of Birth"]||"").trim();
-            
-            // Normalize DOB from Database (replace non-digits with / and clean up spaces)
-            const dobDbClean = (dobDb||"").replace(/[^\d]/g,"/").replace(/\s+/g,"").trim();
-            
-            // Function to get clean D/M/Y parts
-            const parseParts = s => {
-                const parts = s.split("/").filter(Boolean).map(x => parseInt(x) || 0);
-                if (parts.length < 3) return [0, 0, 0];
-                return parts; // Assumes D/M/Y order based on CSV output
-            };
-            
-            const [d1,m1,y1] = parseParts(dobDbClean);
-            const [d2,m2,y2] = parseParts(enteredDobClean);
-            
-            const dobMatch = (d1===d2 && m1===m2 && y1===y2 && d1 !== 0);
-            
-            // ✅ LOGIN CRITERIA: Phone must match AND DOB must match
-            return phoneDb === phone && dobMatch;
-          });
+    try {
+        const res = await fetch(SHEET_CSV_URL);
+        const csv = await res.text();
 
-          if(match){
-            loggedProfile = match;
-            loggedInGender = (match.Gender||"").toLowerCase();
-            const loggedReligion = (match.Religion||"").toLowerCase();
-            const opposite = (loggedInGender==="male") ? "female" : "male";
-            
-            allProfiles = allProfiles.map(p=>p);
-            const candidates = allProfiles.filter(p=>{
-              return ((p.Gender||"").toLowerCase() === opposite) &&
-                     ((p.Religion||"").toLowerCase() === loggedReligion);
-            });
-            
-            filteredProfiles = candidates;
-            showPage('pageSearch');
-            showMyProfile(match);
-            
-              // ✅ ഇവിടെ പുതിയ കോഡ് ചേർക്കുക
-  setTimeout(() => {
-    window.scrollTo(0, 0); // നിർബന്ധമായും ടോപ്പിലേക്ക് സ്ക്രോൾ ചെയ്യുന്നു (Behavior: smooth ഒഴിവാക്കി)
-    console.log("Scrolled to top after login.");
-  }, 100); // 100ms ഡിലേ നൽകുന്നത് പേജ് റെൻഡർ ചെയ്തതിനു ശേഷം സ്ക്രോൾ ചെയ്യാൻ സഹായിക്കും
-            
-            // Store necessary data in localStorage for action functions
-            localStorage.setItem('loggedProfile', JSON.stringify({
-                "Your Phone Number": match["Your Phone Number"],
-                "Date of Birth": match["Date of Birth"],
-            }));
-            console.log("Profile saved to localStorage:", match["Your Phone Number"]);
-          } else {
-            err.textContent = "Invalid phone number or date of birth!";
-          }
-        }
-      });
-    } catch(e){
-      err.textContent = "Error fetching data. Check CSV URL or network connection.";
-      console.error(e);
+        Papa.parse(csv, {
+            header: true,
+            skipEmptyLines: true,
+
+            complete: async function(results){
+                allProfiles = results.data || [];
+
+                const match = allProfiles.find(p => {
+                    const phoneDb = (p["Your Phone Number"] || "").trim();
+                    const dobDb = (p["Date of Birth"] || "").trim();
+
+                    const dobDbClean = dobDb.replace(/[^\d]/g, "/")
+                                            .replace(/\s+/g, "")
+                                            .trim();
+
+                    const parseParts = s => {
+                        const parts = s.split("/").filter(Boolean).map(x => parseInt(x) || 0);
+                        if (parts.length < 3) return [0, 0, 0];
+                        return parts;
+                    };
+
+                    const [d1, m1, y1] = parseParts(dobDbClean);
+                    const [d2, m2, y2] = parseParts(enteredDobClean);
+
+                    const dobMatch = (d1 === d2 && m1 === m2 && y1 === y2 && d1 !== 0);
+
+                    return phoneDb === phone && dobMatch;
+                });
+
+                if (match) {
+                    // ✅ Save logged profile
+                    loggedProfile = match;
+                    loggedInGender = (match.Gender || "").toLowerCase();
+                    const loggedReligion = (match.Religion || "").toLowerCase();
+                    const opposite = loggedInGender === "male" ? "female" : "male";
+
+                    // ✅ Filter opposite gender + same religion
+                    filteredProfiles = allProfiles.filter(p => {
+                        return (
+                            (p.Gender || "").toLowerCase() === opposite &&
+                            (p.Religion || "").toLowerCase() === loggedReligion
+                        );
+                    });
+
+                    // ✅ Show user dashboard
+                    showPage('pageSearch');
+                    showMyProfile(match);
+
+                    /* ✅✅✅ IMPORTANT → load all previously sent interests */
+                    await loadSentInterests();
+                    displayProfiles();
+                    /* ✅✅✅ END */
+
+                    // Scroll fix
+                    setTimeout(() => {
+                        window.scrollTo(0, 0);
+                    }, 100);
+
+                    // Save for identity
+                    localStorage.setItem('loggedProfile', JSON.stringify({
+                        "Your Phone Number": match["Your Phone Number"],
+                        "Date of Birth": match["Date of Birth"],
+                    }));
+
+                    console.log("✅ Profile saved:", match["Your Phone Number"]);
+
+                } else {
+                    err.textContent = "Invalid phone number or date of birth!";
+                }
+            }
+        });
+
+    } catch (e) {
+        err.textContent = "Error fetching data. Check CSV URL or network connection.";
+        console.error(e);
     }
-  }
+}
 
   /* ========== LOGOUT (ADDED) ========== */
   function logout(){
@@ -888,20 +948,22 @@ modal.addEventListener("click", (e) => {
 
 /* ========== REGISTER (FINAL UPDATED) ========== */
 async function registerUser(){
-  const statusDiv = document.getElementById('status'); // ബട്ടണിന് മുകളിലുള്ള സ്റ്റാറ്റസ് ഡിവിഷൻ
+  const statusDiv = document.getElementById('status');
   const form = document.getElementById('regForm');
-  const submitBtn = document.getElementById('submitBtn'); // സബ്മിറ്റ് ബട്ടൺ
+  const submitBtn = document.getElementById('submitBtn');
 
-  statusDiv.textContent = ""; // പഴയ മെസ്സേജ് മാറ്റുന്നു
+  statusDiv.textContent = "";
   
   if(!form.checkValidity()){
     statusDiv.style.color = 'red';
     statusDiv.textContent = 'Please fill required fields.';
-    window.scrollTo({ top: 0, behavior: 'smooth' }); // ഫോമിന്റെ മുകളിലേക്ക് സ്ക്രോൾ ചെയ്യുന്നു
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     return;
   }
 
-  // 1. ബട്ടൺ സ്റ്റാറ്റസ്: Submitting...
+  // ✅ ഇവിടെ popup കാണിക്കുക — ഫോമിൽ എല്ലാം പൂരിപ്പിച്ചതിനുശേഷം മാത്രം
+  showLoadingPopup("Submitting registration...");
+
   const originalBtnText = submitBtn.textContent;
   submitBtn.textContent = 'Submitting Pls Wait...';
   submitBtn.disabled = true;
@@ -993,6 +1055,7 @@ async function registerUser(){
     statusDiv.textContent = 'Network error.';
     console.error(err);
   }
+hideLoadingPopup();  // ✅ popup close
 }
 
   /* ========== SEARCH (UPDATED) ========== */
@@ -1038,119 +1101,111 @@ function applySearch(){
   displayProfiles();
 }
 
-  /* ========== DISPLAY / PAGINATION ========== */
-  function displayProfiles(){
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    const list = filteredProfiles || [];
-    const resultsDiv = document.getElementById("results");
-    resultsDiv.innerHTML = "";
+/* ========== DISPLAY / PAGINATION ========== */
+function displayProfiles(){
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    if(list.length === 0){
-      resultsDiv.innerHTML = "<p>No matching profiles found.</p>";
-      document.getElementById("pagination").innerHTML = "";
-      return;
-    }
+  const list = filteredProfiles || [];
+  const resultsDiv = document.getElementById("results");
+  resultsDiv.innerHTML = "";
 
-    const start = (currentPage - 1) * profilesPerPage;
-    const end = start + profilesPerPage;
-    const pageProfiles = list.slice(start, end);
+  if(list.length === 0){
+    resultsDiv.innerHTML = "<p>No matching profiles found.</p>";
+    document.getElementById("pagination").innerHTML = "";
+    return;
+  }
 
-    pageProfiles.forEach(p => {
-      const card = document.createElement("div");
-      card.className = "card";
-      const photoUrl = convertDriveLink(p["Photo Link"] || p["Upload Your Photo"] || "");
-      const photoHtml = photoUrl
-        ? `<img src="${photoUrl}" alt="photo" onclick="openModal('${photoUrl.replace(/'/g, "\\'")}')">`
-        : `<div class="no-photo">No Photo</div>`;
-          // ✅ Interest ബട്ടൺ ചേർക്കുന്നു. (താൽപര്യമുള്ള പ്രൊഫൈലിൻ്റെ ഫോൺ നമ്പർ ഫംഗ്ഷനിലേക്ക് പാസ് ചെയ്യുന്നു)
-        const recipientPhone = p['Your Phone Number'] || 'N/A';
-    
-    // ✅ ഇവിടെ ചെക്ക് ചെയ്യുന്നു
+  const start = (currentPage - 1) * profilesPerPage;
+  const end = start + profilesPerPage;
+  const pageProfiles = list.slice(start, end);
+
+  pageProfiles.forEach(p => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    // ✅ Photo
+    const photoUrl = convertDriveLink(p["Photo Link"] || p["Upload Your Photo"] || "");
+    const photoHtml = photoUrl
+      ? `<img src="${photoUrl}" alt="photo" onclick="openModal('${photoUrl.replace(/'/g, "\\'")}')">`
+      : `<div class="no-photo">No Photo</div>`;
+
+    // ✅ Interest button check
+    const recipientPhone = p['Your Phone Number'] || '';
     let buttonHtml = '';
-    if (interestsSentByMe.has(recipientPhone)) {
-        // Interest അയച്ചിട്ടുണ്ട്
-        buttonHtml = `
-            <button class="action-btn" disabled 
-                    style="background:#6c757d; padding: 10px 18px; border-radius: 5px; font-weight: bold;">
-              Interest Sent ✔️
-            </button>
-            <p id="interestStatus-${recipientPhone}" style="font-size:12px; margin-top:5px; color:#555;">Already sent.</p>
-        `;
-    } else {
-        // Interest അയച്ചിട്ടില്ലെങ്കിൽ, send ബട്ടൺ കാണിക്കുന്നു
-        buttonHtml = `
-            <button class="action-btn" 
-                    onclick="sendInterest('${recipientPhone}')" 
-                    style="background:#00b050; padding: 10px 18px; border-radius: 5px; font-weight: bold;">
-              Send Interest ❤️
-            </button>
-            <p id="interestStatus-${recipientPhone}" style="font-size:12px; margin-top:5px; color:#555;"></p>
-        `;
-    }
+    const interestStatus = (typeof interestsSentByMe !== 'undefined' && interestsSentByMe.get)
+      ? interestsSentByMe.get(recipientPhone)
+      : null;
 
+    if (interestStatus === 'SENT') {
+    buttonHtml = `
+        <button onclick="cancelInterest('${recipientPhone}')"
+                class="action-btn"
+                style="background:#ff8800;">
+            Cancel Interest ❌
+        </button>
+    `;
+}
+else if (interestStatus === 'ACCEPTED') {
+    buttonHtml = `<button disabled class="action-btn" style="background:#007bff;">Interest Accepted 🤝</button>`;
+}
+else if (interestStatus === 'DECLINED') {
+    buttonHtml = `<button disabled class="action-btn" style="background:#dc3545;">Interest Declined ❌</button>`;
+}
+else {
+    buttonHtml = `<button class="action-btn" onclick="sendInterest('${recipientPhone}')" style="background:#00b050;">Send Interest ❤️</button>`;
+}
+
+
+    // ✅ Profile card structure
     card.innerHTML = `
-        ${photoHtml}
-        <div class="info">
-            </div>
-        
-        <div style="text-align:center; margin-top:10px;">
-          ${buttonHtml} 
-        </div>
-        `;
+      ${photoHtml}
+      <div class="info">
+        <b>Name:</b> ${p.Name || ''}<br>
+        <b>Age:</b> ${calculateAge(p['Date of Birth']) || 'N/A'}<br>
+        <b>Gender:</b> ${p.Gender || ''}<br>
+        <b>Religion:</b> ${p.Religion || ''}<br>
+        <b>Caste:</b> ${p.Caste || ''}<br>
+        <b>Disability:</b> ${p['Disability Details'] || ''}<br>
+        <b>Education:</b> ${p.Education || ''}<br>
+        <b>Job:</b> ${p.Job || ''}<br>
+        <b>Marital Status:</b> ${p['Marital Status'] || ''}<br>
+        <b>Full Address:</b> ${p['Full Address'] || ''}<br>
+        <b>District:</b> ${p.District || ''}<br>
+        <b>Contact 1:</b> ${p['Contact Number 1'] || ''}<br>
+        <b>Contact 2:</b> ${p['Contact Number 2'] || ''}<br>
+        <b>About Me:</b> ${p['About Me'] || ''}<br>
+      </div>
+      <div style="text-align:center; margin-top:10px;">
+        ${buttonHtml}
+      </div>
+    `;
     resultsDiv.appendChild(card);
+  });
 
-      card.innerHTML = `
-  ${photoHtml}
-  <div class="info">
-    <b>Name:</b> ${p.Name||''}<br>
-    <b>Age:</b> ${calculateAge(p['Date of Birth']) || 'N/A'}<br>
-    <b>Gender:</b> ${p.Gender||''}<br>
-    <b>Religion:</b> ${p.Religion||''}<br>
-    <b>Caste:</b> ${p.Caste||''}<br>
-    <b>Disability:</b> ${p['Disability Details']||''}<br>
-    <b>Education:</b> ${p.Education||''}<br>
-    <b>Job:</b> ${p.Job||''}<br>
-    <b>Marital Status:</b> ${p['Marital Status']||''}<br>
-    <b>Full Address:</b> ${p['Full Address']||''}<br>
-    <b>District:</b> ${p.District||''}<br>
-    <b>Contact 1:</b> ${p['Contact Number 1']||''}<br>
-    <b>Contact 2:</b> ${p['Contact Number 2']||''}<br>
-    <b>About Me:</b> ${p['About Me']||''}<br>
-  </div>
-  <div style="text-align:center; margin-top:10px;">
-    <button class="action-btn" 
-            onclick="sendInterest('${recipientPhone}')" 
-            style="background:#00b050; padding: 10px 18px; border-radius: 5px; font-weight: bold;">
-      Send Interest ❤️
-    </button>
-    <p id="interestStatus-${recipientPhone}" style="font-size:12px; margin-top:5px; color:#555;"></p>
-  </div>
-`;
-      
-    resultsDiv.appendChild(card);
-  }); // ✅ ഇവിടെ ഫോർ ഈച്ച് ക്ലോസ് ചെയ്യുന്നു.
-
+  // ✅ Pagination
   const paginationDiv = document.getElementById("pagination");
-    paginationDiv.innerHTML = `<button onclick="prevPage()">Previous</button> Page ${currentPage} of ${Math.ceil(list.length / profilesPerPage)} <button onclick="nextPage()">Next</button>`;
-  }
+  paginationDiv.innerHTML = `
+    <button onclick="prevPage()">Previous</button>
+    Page ${currentPage} of ${Math.ceil(list.length / profilesPerPage)}
+    <button onclick="nextPage()">Next</button>
+  `;
+}
 
-  function nextPage(){
-    if(currentPage < Math.ceil(filteredProfiles.length / profilesPerPage)){
-      currentPage++;
-      displayProfiles();
-      // Scroll to top smoothly
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+function nextPage(){
+  if(currentPage < Math.ceil(filteredProfiles.length / profilesPerPage)){
+    currentPage++;
+    displayProfiles();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+}
 
-  function prevPage(){
-    if(currentPage > 1){
-      currentPage--;
-      displayProfiles();
-      // Scroll to top smoothly
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+function prevPage(){
+  if(currentPage > 1){
+    currentPage--;
+    displayProfiles();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+}
 
  /* ========== MY PROFILE UI & ACTIONS (UPDATED) ========== */
 function showMyProfile(profile){
@@ -1229,7 +1284,7 @@ async function updateProfile() {
       showPage('pageLogin');
       return; 
   }
-  
+    showLoadingPopup("Updating your profile...");
   const status = document.getElementById('editStatus');
   const form = document.getElementById('editForm');
   
@@ -1288,6 +1343,7 @@ async function updateProfile() {
       status.textContent = 'Network error.';
       console.error(err);
   }
+  hideLoadingPopup();
 }
 
 /* Change profile photo */
@@ -1306,6 +1362,7 @@ function changePhoto() {
     reader.onload = async (e) => {
       const base64 = e.target.result.split(',')[1];
       const formData = new FormData();
+  showLoadingPopup("Uploading your photo...");
       formData.append('action','updatePhoto'); 
       
       appendUserIdentity(formData); 
@@ -1344,6 +1401,7 @@ function changePhoto() {
         status.style.color = 'red';
         status.textContent = 'Network error';
       }
+  hideLoadingPopup();
     };
     reader.readAsDataURL(file);
   };
@@ -1599,38 +1657,49 @@ function displayInterestProfiles(listType = 'received'){
             ? `<img src="${photoUrl}" alt="photo" onclick="openModal('${photoUrl.replace(/'/g, "\\'")}')">`
             : `<div class="no-photo">No Photo</div>`;
 
-        // Interest സ്വീകരിക്കാനുള്ള ബട്ടൺ (Received ലിസ്റ്റിൽ മാത്രം കാണിക്കുന്നു)
-        const recipientPhone = p['Your Phone Number'] || 'N/A';
-        const actionButton = (listType === 'received') 
-            ? `<button onclick="acceptInterest('${recipientPhone}')" class="small-btn" style="background:#28a745; width:100%;">Accept Interest</button>`
-            : ``; 
-        
-        // Accepted ലിസ്റ്റിൽ മാത്രം കോൺടാക്റ്റ് നമ്പർ കാണിക്കുന്നു
-        const contactDetail = (listType === 'accepted') 
-            ? `<b>Contact 1:</b> ${p['Contact Number 1']||''}<br>` 
-            : ``; 
+        const senderPhone = p['Your Phone Number'] || 'N/A';
+
+        // ✅ Accept + Reject buttons (Received list ONLY)
+        let actionButtons = "";
+        if(listType === 'received'){
+            actionButtons = `
+                <button onclick="acceptInterest('${senderPhone}')" 
+                        class="small-btn" 
+                        style="background:#28a745; width:100%; margin-bottom:6px;">
+                    Accept Interest ✅
+                </button>
+
+                <button onclick="rejectInterest('${senderPhone}')" 
+                        class="small-btn" 
+                        style="background:#dc3545; width:100%;">
+                    Reject Interest ❌
+                </button>
+            `;
+        }
 
         card.innerHTML = `
-  ${photoHtml}
-  <div class="info">
-    <b>Name:</b> ${p.Name||''}<br>
-    <b>Age:</b> ${calculateAge(p['Date of Birth']) || 'N/A'}<br>
-    <b>Gender:</b> ${p.Gender||''}<br>
-    <b>Religion:</b> ${p.Religion||''}<br>
-    <b>Caste:</b> ${p.Caste||''}<br>
-    <b>Disability:</b> ${p['Disability Details']||''}<br>
-    <b>Education:</b> ${p.Education||''}<br>
-    <b>Job:</b> ${p.Job||''}<br>
-    <b>Marital Status:</b> ${p['Marital Status']||''}<br>
-    <b>Full Address:</b> ${p['Full Address']||''}<br>
-    <b>District:</b> ${p.District||''}<br>
-    <b>Contact 1:</b> ${p['Contact Number 1']||''}<br>
-    <b>Contact 2:</b> ${p['Contact Number 2']||''}<br>
-    <b>About Me:</b> ${p['About Me']||''}<br>
-  </div>
+            ${photoHtml}
+            <div class="info">
+                <b>Name:</b> ${p.Name||''}<br>
+                <b>Age:</b> ${calculateAge(p['Date of Birth']) || 'N/A'}<br>
+                <b>Gender:</b> ${p.Gender||''}<br>
+                <b>Religion:</b> ${p.Religion||''}<br>
+                <b>Caste:</b> ${p.Caste||''}<br>
+                <b>Disability:</b> ${p['Disability Details']||''}<br>
+                <b>Education:</b> ${p.Education||''}<br>
+                <b>Job:</b> ${p.Job||''}<br>
+                <b>Marital Status:</b> ${p['Marital Status']||''}<br>
+                <b>Full Address:</b> ${p['Full Address']||''}<br>
+                <b>District:</b> ${p.District||''}<br>
+                <b>Contact 1:</b> ${p['Contact Number 1']||''}<br>
+                <b>Contact 2:</b> ${p['Contact Number 2']||''}<br>
+                <b>About Me:</b> ${p['About Me']||''}<br>
+            </div>
             <div style="text-align:center; margin-top:10px;">
-               ${actionButton}
-            </div>`;
+                ${actionButtons}
+            </div>
+        `;
+
         resultsDiv.appendChild(card);
     });
 
@@ -1643,68 +1712,49 @@ function displayInterestProfiles(listType = 'received'){
         <button onclick="nextInterestPage()" ${currentInterestPage === totalPages ? 'disabled' : ''}>Next</button>`;
 } 
 /* ========== SEND INTEREST FUNCTION ========== */
-async function sendInterest(recipientPhone) {
-    if (!loggedProfile) { 
-        alert("Please login first to send interest."); 
+async function sendInterest(recipientPhone){
+    if(!loggedProfile){
+        alert('Please login to send interest.');
         showPage('pageLogin');
-        return; 
-    }
-    
-    // Interest അയക്കുന്നയാളുടെ ഫോൺ നമ്പർ
-    const senderPhone = loggedProfile['Your Phone Number']; 
-    const senderName = loggedProfile['Name'];
-    const statusEl = document.getElementById(`interestStatus-${recipientPhone}`);
-    
-    // സ്വയം Interest അയക്കുന്നത് തടയുന്നു
-    if (senderPhone === recipientPhone) {
-        statusEl.style.color = 'red';
-        statusEl.textContent = 'Cannot send interest to yourself!';
         return;
     }
 
-    // UI Feedback: ബട്ടൺ ഡിസേബിൾ ചെയ്യുന്നു
-    const btn = statusEl.previousElementSibling;
-    const originalText = btn.textContent;
-    btn.textContent = 'Sending...';
-    btn.disabled = true;
-
-    // Apps Script ലേക്ക് അയക്കാനുള്ള ഡാറ്റ
+    const senderPhone = loggedProfile['Your Phone Number'];
     const params = new URLSearchParams();
-    params.append('action', 'sendInterest'); 
+    params.append('action', 'sendInterest');
     params.append('senderPhone', senderPhone);
     params.append('recipientPhone', recipientPhone);
-    params.append('senderName', senderName); // Apps Script-ൽ ഉപയോഗിക്കുന്നില്ലെങ്കിലും അയക്കാം
-    
-    try {
-        // ⚠️ SCRIPT_URL ശരിയാണോ എന്ന് ഉറപ്പാക്കുക 
-        const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
-        const text = await res.text();
 
-        if (text.includes('INTEREST_SENT')) {
-            statusEl.style.color = 'green';
-            statusEl.textContent = 'Interest Sent Successfully!';
-            btn.textContent = 'Interest Sent';
-            btn.disabled = true; 
-        } else if (text.includes('ALREADY_SENT')) {
-            statusEl.style.color = 'orange';
-            statusEl.textContent = 'Interest already sent!';
-            btn.textContent = 'Already Sent';
-            btn.disabled = true;
-        } else {
-            // Apps Script എറർ മെസ്സേജ്
-            statusEl.style.color = 'red';
-            statusEl.textContent = 'Error: ' + text; 
-            btn.textContent = originalText;
-            btn.disabled = false;
+    try {
+        const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
+        const text = await res.text().then(t => t.trim());
+
+        console.log("Interest Response: ", text);
+
+        if (text === "INTEREST_SENT") {
+            // ✅ FIRST TIME sending — Update UI immediately
+            interestsSentByMe.set(recipientPhone, "SENT");
+            displayProfiles();
+            alert("Interest Sent ✅");
         }
-    } catch (e) {
-        statusEl.style.color = 'red';
-        statusEl.textContent = 'Network Error.';
-        btn.textContent = originalText;
-        btn.disabled = false;
-        console.error("Fetch Error:", e);
+        else if (text === "ALREADY_SENT") {
+            // ✅ Already sent — show cancel button
+            interestsSentByMe.set(recipientPhone, "SENT");
+            displayProfiles();
+            alert("Already Sent ✅");
+        }
+        else {
+            alert("Error: " + text);
+        }
+
+    } catch (err){
+        console.error(err);
+        alert("Error sending interest.");
     }
 }
+
+
+
 /* ========== INTEREST PAGINATION LOGIC ========== */
 function nextInterestPage(){
     if(currentInterestPage < Math.ceil(interestsList.length / interestProfilesPerPage)){
@@ -1725,42 +1775,97 @@ function prevInterestPage(){
     }
 }
 /* ========== NEW STATE VARIABLE ========== */
-let interestsSentByMe = new Set(); // ഞാൻ അയച്ച interest-ൻ്റെ phone number-കൾ
+let interestsSentByMe = new Map();  // phone → status
+ // ഞാൻ അയച്ച interest-ൻ്റെ phone number-കൾ
 
 /* ========== LOAD SENT INTERESTS AFTER LOGIN ========== */
+
+
+
 async function loadSentInterests() {
+  if (!loggedProfile) return;
+  const phone = loggedProfile['Your Phone Number'];
+  const params = new URLSearchParams();
+  params.append('action', 'getSentInterests');
+  params.append('senderPhone', phone);
+
+  try {
+    const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
+    const text = await res.text();
+    let data = [];
+    try { data = JSON.parse(text); } catch(e){ console.warn("Invalid JSON:", text); }
+
+    interestsSentByMe.clear();
+    data.forEach(it => {
+      if (it.recipientPhone) interestsSentByMe.set(it.recipientPhone, it.status || 'SENT');
+    });
+
+    console.log("✅ Loaded sent interests:", interestsSentByMe);
+  } catch (e) {
+    console.error("Error loading sent interests", e);
+  }
+}
+async function rejectInterest(senderPhone) {
     if (!loggedProfile) return;
-    
-    const senderPhone = loggedProfile['Your Phone Number'];
-    
+
+    if (!confirm('Reject this interest?')) return;
+
+    const recipientPhone = loggedProfile['Your Phone Number'];
+
     const params = new URLSearchParams();
-    params.append('action', 'getSentInterests'); 
+    params.append('action', 'rejectInterest');
     params.append('senderPhone', senderPhone);
+    params.append('recipientPhone', recipientPhone);
 
     try {
         const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
         const text = await res.text();
-        
-        let recipientPhones;
-        try {
-            recipientPhones = JSON.parse(text); 
-        } catch (e) {
-            console.error("Error parsing sent interests list:", text);
-            return;
-        }
-        
-        // Set-ൽ സേവ് ചെയ്യുന്നു (ഇതാണ് ഏറ്റവും പ്രധാനം)
-        interestsSentByMe = new Set(recipientPhones);
-        
-        // ഡാറ്റ ലോഡ് ചെയ്ത ശേഷം നിലവിലെ സെർച്ച് റിസൾട്ടുകൾ വീണ്ടും കാണിക്കുന്നു (അല്ലെങ്കിൽ പേജ് റീലോഡ് ചെയ്യുന്നു)
-        if (document.getElementById('pageSearch').style.display === 'block') {
-             displayProfiles(); 
-        }
 
+        if (text.includes('INTEREST_REJECTED')) {
+            alert('Interest rejected.');
+            showInterestList('received'); // Reload list
+        } else {
+            alert('Error rejecting interest: ' + text);
+        }
     } catch (e) {
-        console.error("Network Error fetching sent interests.", e);
+        alert('Network Error rejecting interest.');
     }
 }
+async function cancelInterest(recipientPhone) {
+    if (!loggedProfile) {
+        alert("Please login first");
+        return;
+    }
+
+    if (!confirm("Do you want to cancel this interest?")) return;
+
+    const senderPhone = loggedProfile["Your Phone Number"];
+
+    const params = new URLSearchParams();
+    params.append("action", "cancelInterest");
+    params.append("senderPhone", senderPhone);
+    params.append("recipientPhone", recipientPhone);
+
+    try {
+        const res = await fetch(SCRIPT_URL, {
+            method: "POST",
+            body: params
+        });
+
+        const text = await res.text();
+
+        if (text.includes("INTEREST_CANCELLED")) {
+            alert("Interest Request Cancelled ✅");
+            loadSentInterests && loadSentInterests(); // if function exists
+        } else {
+            alert("Error: " + text);
+        }
+    } catch (err) {
+        alert("Network error");
+    }
+}
+
+
   </script>
   </body>
   </html>
