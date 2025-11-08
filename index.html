@@ -743,7 +743,7 @@ modal.addEventListener('click', () => {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script>
   /* ========== CONFIG ========== */
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypCKPb07-ZnmCLhqvXl_lyLvFcLLvRhtQ7r62RhC9a2VQyBzE8J1XlPmrGvIiXKPlz/exec"; // <-- set your script URL
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyD62tLyfA4YoIvvcxXxbu_T-2YgYuyk0AvCoSrskt-mFURY-x74PszNB1GOu0QMsst/exec"; // <-- set your script URL
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHJLHXWQaMioqSExrL-vdbu65_py6Ti9KzPtkxXaMaj9CygZ9OFH1a3ne7rCQ0_fF_KhNc-OiPDmvo/pub?output=csv"; // your published CSV
 
 /* ========== STATE ========== */
@@ -1151,11 +1151,27 @@ else if (interestStatus === 'ACCEPTED') {
     buttonHtml = `<button disabled class="action-btn" style="background:#007bff;">Interest Accepted 🤝</button>`;
 }
 else if (interestStatus === 'REJECTED') {
-    buttonHtml = `<button disabled class="action-btn" style="background:#dc3545;">Interest Rejected ❌</button>`;
+    buttonHtml = `<button disabled class="action-btn" style="background:#dc3545;">
+        Interest Rejected ❌
+    </button>`;
+}
+else if (interestStatus === 'Cancelled') {
+    // Cancelled → Should allow sending again
+    buttonHtml = `<button class="action-btn" 
+        onclick="sendInterest('${recipientPhone}')"
+        style="background:#00b050;">
+        Send Interest ❤️
+    </button>`;
 }
 else {
-    buttonHtml = `<button class="action-btn" onclick="sendInterest('${recipientPhone}')" style="background:#00b050;">Send Interest ❤️</button>`;
+    buttonHtml = `<button class="action-btn" 
+        onclick="sendInterest('${recipientPhone}')"
+        style="background:#00b050;">
+        Send Interest ❤️
+    </button>`;
 }
+
+
 
 
 
