@@ -1844,6 +1844,47 @@ async function loadSentInterests() {
     }
 }
 
+/* ========== CANCEL INTEREST (NEW FUNCTION) ========== */
+async function cancelInterest(recipientPhone){
+    if (!loggedProfile){
+        alert("Please login first.");
+        showPage('pageLogin');
+        return;
+    }
+
+    const senderPhone = loggedProfile['Your Phone Number'];
+
+    if (!confirm("Cancel this interest?")) return;
+
+    const params = new URLSearchParams();
+    params.append("action", "cancelInterest");
+    params.append("senderPhone", senderPhone);
+    params.append("recipientPhone", recipientPhone);
+
+    try {
+        const res = await fetch(SCRIPT_URL, { method: "POST", body: params });
+        const text = await res.text().then(t => t.trim());
+
+        console.log("CANCEL SERVER:", text);
+
+        if (text.includes("INTEREST_CANCELLED")) {
+
+            // ✅ update UI immediately
+            interestsSentByMe.set(recipientPhone, null);
+
+            alert("Interest cancelled ✅");
+
+            displayProfiles();
+            return;
+        }
+
+        alert("Error: " + text);
+
+    } catch (err){
+        console.error(err);
+        alert("Network Error while cancelling interest.");
+    }
+}
 
 
 
