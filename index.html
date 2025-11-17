@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
   <html lang="ml">
   <head>
@@ -191,37 +192,6 @@
   </div>
 </div>
 
-<!-- ✅ SUCCESS POPUP -->
-<div id="successPopup" style="
-  display:none;
-  position:fixed;
-  top:0; left:0;
-  width:100%; height:100%;
-  background:rgba(0,0,0,0.85);
-  z-index:99999;
-  justify-content:center;
-  align-items:center;
-">
-  <div style="
-    background:#111;
-    padding:25px 30px;
-    border-radius:12px;
-    text-align:center;
-    color:#fff;
-    box-shadow:0 0 15px rgba(255,255,255,0.3);
-    max-width:300px;
-  ">
-    <h3 style="color:#00ff9d;margin-bottom:10px;">✅ Successfully Registered</h3>
-    <p style="color:#ddd;font-size:14px;margin-bottom:20px;">Please login to continue</p>
-    
-    <button onclick="closeSuccessPopup()" 
-      style="background:#00b050;color:#fff;padding:10px 20px;border:none;
-      border-radius:8px;font-size:16px;cursor:pointer;">
-      Login
-    </button>
-  </div>
-</div>
-
 <script>
 function showLoadingPopup(message){
   const popup = document.getElementById('loadingPopup');
@@ -235,23 +205,15 @@ function hideLoadingPopup(){
   popup.style.display = 'none';
   document.body.style.pointerEvents = 'auto'; // enable again
 }
-function showSuccessPopup(){
-  document.getElementById('successPopup').style.display = 'flex';
-}
-
-function closeSuccessPopup(){
-  document.getElementById('successPopup').style.display = 'none';
-  showPage('pageLogin');
-  window.scrollTo(0,0);
-}
-function closeSuccessPopup() {
-    document.getElementById('successPopup').style.display = 'none';
-    showPage('pageLogin');
-    window.scrollTo(0, 0);
-}
-
-
 </script>
+
+</body>
+</html>
+
+
+
+
+
 
     <div id="pageRegister" style="display:none;">
   <h2 style="text-align:center;">📝 Matrimony Registration Form</h2>
@@ -329,19 +291,7 @@ function closeSuccessPopup() {
     <input name="Name" required>
 
     <label>Your Phone Number</label>
-    <input 
-   name="Your Phone Number"
-   id="regPhone"
-   type="tel"
-   required
-   minlength="10"
-   maxlength="10"
-   pattern="[0-9]{10}"
-   inputmode="numeric"
-   autocomplete="tel"
->
-
-
+    <input name="Your Phone Number" type="tel" required>
 
     <label>Date of Birth</label>
     <div class="dob-selects">
@@ -549,8 +499,6 @@ function closeSuccessPopup() {
   <div id="myProfileDetails" class="profile-details" 
        style="background:#f9f9f9;border-radius:10px;padding:15px;margin-bottom:20px;text-align:left;box-shadow:0 0 6px rgba(0,0,0,0.1);">
   </div>
-
-
 
   <!-- Action Buttons Grid -->
   <div class="actions-grid" 
@@ -796,7 +744,7 @@ modal.addEventListener('click', () => {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script>
   /* ========== CONFIG ========== */
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyD62tLyfA4YoIvvcxXxbu_T-2YgYuyk0AvCoSrskt-mFURY-x74PszNB1GOu0QMsst/exec"; // <-- set your script URL
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1gyZtWhSyqYoxHYJma6WfJcwspDnruNfJCypwEyCwXVZVcGlnoRrvWoliFzUEKqaq/exec"; // <-- set your script URL
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHJLHXWQaMioqSExrL-vdbu65_py6Ti9KzPtkxXaMaj9CygZ9OFH1a3ne7rCQ0_fF_KhNc-OiPDmvo/pub?output=csv"; // your published CSV
 
 /* ========== STATE ========== */
@@ -907,9 +855,8 @@ async function login(){
     const enteredDobClean = enteredDob.replace(/[^\d]/g, "/").replace(/\s+/g, "").trim();
 
     try {
-        // 🧩 prevent cache by appending timestamp
-const res = await fetch(SHEET_CSV_URL);
-const csv = await res.text();
+        const res = await fetch(SHEET_CSV_URL);
+        const csv = await res.text();
 
         Papa.parse(csv, {
             header: true,
@@ -1009,184 +956,153 @@ async function registerUser(){
   const submitBtn = document.getElementById('submitBtn');
 
   statusDiv.textContent = "";
-  statusDiv.style.color = "red";
-
-  // 🧩 PHONE VALIDATION FIRST (10 digits only)
-  const phone = form.querySelector('input[name="Your Phone Number"]').value.trim();
-  if (!/^\d{10}$/.test(phone)) {
-      statusDiv.textContent = '⚠️ Invalid phone number. Enter 10 digits.';
-      return;
+  
+  if(!form.checkValidity()){
+    statusDiv.style.color = 'red';
+    statusDiv.textContent = 'Please fill required fields.';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
   }
 
-  // 🧩 THEN validate the rest of the form
-  if (!form.checkValidity()) {
-      statusDiv.textContent = '⚠️ Please fill all required fields before submitting.';
-      form.reportValidity(); // highlights missing fields
-      return;
-  }
-
-  // 🧩 STEP 2 — Show loading only AFTER validation success
+  // ✅ ഇവിടെ popup കാണിക്കുക — ഫോമിൽ എല്ലാം പൂരിപ്പിച്ചതിനുശേഷം മാത്രം
   showLoadingPopup("Submitting registration...");
 
   const originalBtnText = submitBtn.textContent;
-  submitBtn.textContent = 'Submitting...';
+  submitBtn.textContent = 'Submitting Pls Wait...';
   submitBtn.disabled = true;
 
   const fd = new FormData(form);
   const fileInput = form.querySelector('input[name="photoFile"]');
   const file = fileInput.files[0];
-  let base64 = "";
 
-  if (file) {
+  let base64 = "";
+  if(file){
     try {
-      const reader = await new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload = e => res(e.target.result);
-        r.onerror = rej;
-        r.readAsDataURL(file);
-      });
-      base64 = reader.split(',')[1];
+        const reader = await new Promise((res,rej)=>{
+            const r = new FileReader();
+            r.onload = e => res(e.target.result);
+            r.onerror = rej;
+            r.readAsDataURL(file);
+        });
+        base64 = reader.split(',')[1];
     } catch (e) {
-      hideLoadingPopup();
-      statusDiv.style.color = 'red';
-      statusDiv.textContent = 'Error reading file.';
-      submitBtn.textContent = originalBtnText;
-      submitBtn.disabled = false;
-      return;
+        // പരാജയം: ബട്ടൺ Submit എന്ന് തന്നെ നിലനിർത്തുന്നു
+        statusDiv.style.color = 'red';
+        statusDiv.textContent = 'Error reading file.';
+        submitBtn.textContent = originalBtnText; // Submit
+        submitBtn.disabled = false;
+        return;
     }
   }
 
   const params = new URLSearchParams();
-  for (const [k, v] of fd.entries()) {
-    if (k === 'photoFile') continue;
+  for(const [k,v] of fd.entries()){
+    if(k === 'photoFile') continue;
     params.append(k, v);
   }
   params.append('photo', base64);
   params.append('photoName', file ? file.name : "");
   params.append('photoType', file ? file.type : "");
 
-  try {
+  try{
     const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
-    const text = (await res.text()).trim();
+    const text = await res.text();
 
-    if (text.includes('ALREADY_REGISTERED')) {
-      hideLoadingPopup();
-      submitBtn.textContent = originalBtnText;
-      submitBtn.disabled = false;
+    if(text.includes('ALREADY_REGISTERED')){
+      // 2. പരാജയം: ബട്ടൺ Submit എന്ന് തന്നെ നിലനിർത്തുന്നു
+      submitBtn.textContent = originalBtnText; // Submit
+      submitBtn.disabled = false; 
+      
+      // 3. മെസ്സേജ്: മുകളിൽ
       statusDiv.style.color = 'orange';
-      statusDiv.textContent = '⚠️ This phone number is already registered. Please login.';
-      return;
-    }
-
-    else if (text.includes('Success')) {
-      hideLoadingPopup();
-
-      // ✅ SUCCESS POPUP
-      showSuccessPopup();
-
-      // ✅ Reset form and button
-      form.reset();
-      submitBtn.textContent = originalBtnText;
-      submitBtn.disabled = false;
-
-      // ✅ Auto redirect to Login after 2 seconds
+      statusDiv.textContent = 'This phone number is already registered. Please login.';
+      
+    } else if(text.includes('Success')){
+      
+      // 2. വിജയം: ബട്ടൺ Submitted എന്ന് കാണിക്കുന്നു
+      submitBtn.textContent = 'Submitted';
+      
+      // 3. മെസ്സേജ്: മുകളിൽ
+      statusDiv.style.color = 'green';
+      statusDiv.style.fontWeight = 'bold';
+      statusDiv.textContent = 'Registration successful! Please login.';
+      
+      // ഫോം റീസെറ്റ് ചെയ്യുന്നു
+      form.reset(); 
+      // ബട്ടൺ വീണ്ടും പഴയപോലെയാകാൻ കുറച്ച് സമയം നൽകുന്നു
       setTimeout(() => {
-        closeSuccessPopup();
-      }, 4000);
-
-      return;
-    }
-
-    else {
-      hideLoadingPopup();
-      submitBtn.textContent = originalBtnText;
-      submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText; // Submit
+        submitBtn.disabled = false;
+        statusDiv.style.fontWeight = 'normal';
+      }, 3000); 
+      
+    } else {
+      // 2. പരാജയം: ബട്ടൺ Submit എന്ന് തന്നെ നിലനിർത്തുന്നു
+      submitBtn.textContent = originalBtnText; // Submit
+      submitBtn.disabled = false; 
+      
+      // 3. മെസ്സേജ്: മുകളിൽ
       statusDiv.style.color = 'red';
-      statusDiv.textContent = '❌ Unexpected response: ' + text;
+      statusDiv.textContent = 'Error: ' + text;
     }
-
-  } catch (err) {
-    hideLoadingPopup();
-    submitBtn.textContent = originalBtnText;
+    // മെസ്സേജ് കാണിച്ച ശേഷം മുകളിലേക്ക് സ്ക്രോൾ ചെയ്യുന്നു
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+  } catch(err){
+    // 2. പരാജയം: ബട്ടൺ Submit എന്ന് തന്നെ നിലനിർത്തുന്നു
+    submitBtn.textContent = originalBtnText; // Submit
     submitBtn.disabled = false;
+    
+    // 3. മെസ്സേജ്: മുകളിൽ
     statusDiv.style.color = 'red';
-    statusDiv.textContent = 'Network error. Please try again.';
+    statusDiv.textContent = 'Network error.';
     console.error(err);
   }
+hideLoadingPopup();  // ✅ popup close
 }
 
-
   /* ========== SEARCH (UPDATED) ========== */
-function applySearch() {
+function applySearch(){
   if (!loggedProfile) {
     alert("Please login first to search.");
     showPage('pageLogin');
     return;
   }
-
-  /* ---------------------------------------------------
-     1️⃣ Logged user details (SAFE FALLBACKS INCLUDED)
-     --------------------------------------------------- */
-  let loggedReligion = (loggedProfile.Religion || "").toLowerCase().trim();
-  let loggedGender = (loggedProfile.Gender || "").toLowerCase().trim();
-
-  // If gender is missing, assume “male” (fallback)
-  if (!loggedGender) loggedGender = "male";
-
+  
+  // 1. ലോഗിൻ ചെയ്ത യൂസറുടെ വിവരങ്ങൾ എടുക്കുന്നു
+  const loggedReligion = (loggedProfile.Religion || "").toLowerCase();
+  const loggedGender = (loggedProfile.Gender || "").toLowerCase();
   const oppositeGender = (loggedGender === "male") ? "female" : "male";
 
-  /* ---------------------------------------------------
-     2️⃣ Base Pool: Opposite gender + (optional) religion 
-     --------------------------------------------------- */
+  // 2. എല്ലാ പ്രൊഫൈലുകളിൽ നിന്നും Opposite Gender-ഉം Same Religion-ഉം ഫിൽട്ടർ ചെയ്യുന്നു
   const basePool = allProfiles.filter(p => {
-
-    const pGender = (p.Gender || "").toLowerCase().trim();
-    const pReligion = (p.Religion || "").toLowerCase().trim();
-
-    // Gender filter (always applied)
-    const genderOk = (pGender === oppositeGender);
-
-    // Religion filter – ONLY if religion exists
-    const religionOk = loggedReligion 
-                       ? (pReligion === loggedReligion)
-                       : true;
-
-    return genderOk && religionOk;
+    return ((p.Gender || "").toLowerCase() === oppositeGender) &&
+           ((p.Religion || "").toLowerCase() === loggedReligion);
   });
-
-  /* ---------------------------------------------------
-     3️⃣ Extract search filters
-     --------------------------------------------------- */
+  
+  // 3. തിരയൽ ഫിൽട്ടറുകൾ എടുക്കുന്നു
   const ageMin = parseInt(document.getElementById('ageMin').value) || 18;
   const ageMax = parseInt(document.getElementById('ageMax').value) || 99;
-  const district = (document.getElementById('district').value || "").toLowerCase().trim();
-  const disability = (document.getElementById('disability').value || "").toLowerCase().trim();
+  const district = (document.getElementById('district').value || "").toLowerCase();
+  const disability = (document.getElementById('disability').value || "").toLowerCase();
 
-  /* ---------------------------------------------------
-     4️⃣ Apply search filters on basePool
-     --------------------------------------------------- */
-  const results = basePool.filter(p => {
-
+  // 4. Base Pool-ൽ (Opposite Gender & Same Religion) തിരയൽ ഫിൽട്ടറുകൾ പ്രയോഗിക്കുന്നു
+  const results = basePool.filter(p=>{
     const age = parseInt(p.Age) || calculateAge(p['Date of Birth']);
-    const dist = (p.District || "").toLowerCase().trim();
-    const dis  = (p['Disability Details'] || "").toLowerCase().trim();
-
+    const dist = (p.District||"").toLowerCase();
+    const dis = (p['Disability Details']||"").toLowerCase();
     const ageOk = age >= ageMin && age <= ageMax;
     const distOk = !district || dist === district;
-    const disOk  = !disability || dis.includes(disability);
-
+    const disOk = !disability || dis.includes(disability);
     return ageOk && distOk && disOk;
   });
 
-  /* ---------------------------------------------------
-     5️⃣ Set results for pagination and show page
-     --------------------------------------------------- */
+  // set for pagination/display
   filteredProfiles = results;
   currentPage = 1;
   showPage('pageResults');
   displayProfiles();
 }
-
 
 /* ========== DISPLAY / PAGINATION ========== */
 function displayProfiles(){
@@ -1381,7 +1297,6 @@ function editProfile() {
   showPage('pageEdit');
 }
  
-/* 💾 UPDATE PROFILE (NEW LOGIC + FIXED REFRESH) */
 /* 💾 UPDATE PROFILE (NEW LOGIC) */
 async function updateProfile() {
   if (!loggedProfile) { 
@@ -1421,115 +1336,95 @@ async function updateProfile() {
       const text = await res.text();
 
       if (text.includes('PROFILE_UPDATED')) {
-  status.style.color = 'green';
-  status.textContent = 'Profile updated successfully!';
-          // Update local profile
-          const fdObj = Object.fromEntries(fd.entries());
-          Object.assign(loggedProfile, fdObj);
-          showMyProfile(loggedProfile);
-
-          // 🔥 FRESH CSV RELOAD (IMPORTANT)
-          await reloadAllProfiles();
-
-          // 🔥 Refresh search list immediately
-          showPage('pageSearch');
+          status.style.color = 'green';
+          status.textContent = 'Profile updated successfully! Returning to search page...';
           
-await reloadAllProfiles();
-refreshLoggedProfile();   // <-- VERY IMPORTANT
-showPage('pageSearch');
-
-      } 
-      else if (text.includes('PROFILE_NOT_FOUND')) {
+          // 2.5 സെക്കൻഡ് കാത്തിരിക്കുന്നത് Apps Script അപ്ഡേറ്റ് ചെയ്ത്, CSV-യിൽ മാറ്റം വരാനുള്ള സമയം നൽകാനാണ്.
+          setTimeout(async () => {
+              // 1. login() വീണ്ടും വിളിക്കുമ്പോൾ CSV റീലോഡ് ചെയ്യുകയും
+              //    പുതിയ ഡാറ്റ ഉപയോഗിച്ച് loggedProfile അപ്ഡേറ്റ് ചെയ്യുകയും
+              //    search പേജിലേക്ക് (pageSearch) പോകുകയും ചെയ്യും.
+              await login(); 
+              
+              // 2. ഈ delay ക്ക് ശേഷം സ്റ്റാറ്റസ് മെസ്സേജ് മാറ്റുന്നു
+              document.getElementById('editStatus').textContent = "Data Reloaded. Redirecting...";
+              
+          }, 2500); // 2.5 സെക്കൻഡ് ഡിലേ
+          
+      } else if (text.includes('PROFILE_NOT_FOUND')) {
           status.style.color = 'red';
           status.textContent = 'Error: Profile not found. Please re-login.';
-      } 
-      else {
+      } else {
           status.style.color = 'red';
           status.textContent = 'Error updating profile: ' + text;
       }
-
-  } catch (err) {
+  } catch(err) {
       status.style.color = 'red';
       status.textContent = 'Network error.';
       console.error(err);
   }
-
   hideLoadingPopup();
 }
 
-
-/* Change profile photo – FINAL WORKING VERSION */
+/* Change profile photo */
 function changePhoto() {
   if (!loggedProfile) { alert('Please login first'); return; }
 
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/*';
-
   input.onchange = async () => {
     const file = input.files[0];
     if (!file) return;
-
     if (!confirm('Replace your profile photo?')) return;
 
     const reader = new FileReader();
     reader.onload = async (e) => {
       const base64 = e.target.result.split(',')[1];
-
       const formData = new FormData();
-      formData.append('action','updatePhoto');
-      appendUserIdentity(formData);
+  showLoadingPopup("Uploading your photo...");
+      formData.append('action','updatePhoto'); 
+      
+      appendUserIdentity(formData); 
+      
       formData.append('photo', base64);
       formData.append('photoName', file.name);
       formData.append('photoType', file.type || 'image/jpeg');
 
       const status = document.getElementById('myProfileStatus');
       status.style.color = '#555';
-      status.textContent = 'Uploading photo...';
-
-      showLoadingPopup("Uploading your photo...");
+      status.textContent = 'Uploading photo... Please wait.';
 
       try {
         const res = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
-        const text = (await res.text()).trim();
-
+        const text = await res.text();
         if (text.includes('PHOTO_UPDATED')) {
-
-          // 1️⃣ Update local preview
-          const previewUrl = e.target.result;
-          document.getElementById('myProfilePhoto').src = previewUrl;
-
-          loggedProfile['Upload Your Photo'] = previewUrl;
-          showMyProfile(loggedProfile);
-
           status.style.color = 'green';
-          status.textContent = 'Photo updated successfully!';
-
-          // 2️⃣ Reload CSV (fresh)
-          await reloadAllProfiles();
-          refreshLoggedProfile();   // REQUIRED
-
-          // 3️⃣ Go to Search page
-          showPage('pageSearch');
-
-          hideLoadingPopup();
-          return;
+          status.textContent = 'Photo updated successfully. Reloading profile...';
+          
+          // ✅ ഇവിടെയാണ് പ്രധാന മാറ്റം
+          // 2.5 സെക്കൻഡിന് ശേഷം login() ഫംഗ്ഷൻ വിളിച്ച് പ്രൊഫൈൽ ഡാറ്റ വീണ്ടും ലോഡ് ചെയ്യുന്നു.
+          // (Google Sheets-ലെ അപ്ഡേറ്റ് CSV-യിൽ വരാനുള്ള സമയം നൽകുന്നു)
+          setTimeout(async () => {
+             // ഇവിടെ ലോഗിൻ വീണ്ടും വിളിക്കുന്നത് ഡാറ്റ വീണ്ടും സെർച്ച് ചെയ്ത് എടുക്കാൻ വേണ്ടിയാണ്.
+             // ലോഗിൻ ഫംഗ്ഷൻ 'pageSearch' ലേക്കാണ് പോകുന്നത്, അത് നിലവിലെ പേജ് ആണ്.
+             await login();
+             status.style.color = 'green';
+             status.textContent = 'Profile photo updated!';
+          }, 2500); // 2.5 സെക്കൻഡ് കാത്തിരിക്കുന്നു
+          
+        } else {
+          status.style.color = 'red';
+          status.textContent = 'Failed: ' + text;
         }
-
+      } catch (e) {
         status.style.color = 'red';
-        status.textContent = 'Error: ' + text;
-
-      } catch (err) {
-        status.style.color = 'red';
-        status.textContent = 'Network error.';
+        status.textContent = 'Network error';
       }
-
-      hideLoadingPopup();
+  hideLoadingPopup();
     };
-
     reader.readAsDataURL(file);
   };
-
   input.click();
 }
 
@@ -1563,9 +1458,6 @@ async function deletePhoto() {
   } catch (e) {
     status.style.color = 'red';
     status.textContent = 'Network error';
-    await reloadAllProfiles();
-applySearch();
-
   }
 }
 
@@ -1630,35 +1522,38 @@ async function deleteProfile() {
   
   /* ✅ Helper: Only include phone for security-sensitive actions */
   function appendUserIdentity(params) {
-  let phone = "";
+    let phone = "";
 
-  try {
-    const saved = localStorage.getItem("loggedProfile");
-    if (saved) {
-      const temp = JSON.parse(saved);  
-      phone = (temp && temp["Your Phone Number"])
-        ? String(temp["Your Phone Number"]).trim()
-        : "";
+    try {
+      const saved = localStorage.getItem("loggedProfile");
+      if (saved) {
+        loggedProfile = JSON.parse(saved);
+        phone = (loggedProfile && loggedProfile["Your Phone Number"])
+          ? String(loggedProfile["Your Phone Number"]).trim()
+          : "";
+      } else {
+        console.warn("⚠️ No profile found in localStorage!");
+      }
+    } catch (err) {
+      console.error("Error loading profile from localStorage:", err);
     }
-  } catch (err) {
-    console.error("Error loading profile from localStorage:", err);
-  }
 
-  if (!phone) {
-    alert("⚠️ Phone number missing. Please logout and login again.");
+    if (!phone) {
+      alert("⚠️ Phone number missing. Please logout and login again.");
+      return params;
+    }
+
+    // ✅ Only append 'phone' (Used for server-side lookup/update)
+    if (params instanceof FormData) {
+      params.append("phone", phone);
+    } else if (params instanceof URLSearchParams) {
+      params.append("phone", phone);
+    } else {
+      console.warn("appendUserIdentity(): Unknown params type");
+    }
+
     return params;
   }
-
-  // IMPORTANT: DO NOT MODIFY loggedProfile HERE
-
-  if (params instanceof FormData) {
-    params.append("phone", phone);
-  } else if (params instanceof URLSearchParams) {
-    params.append("phone", phone);
-  }
-
-  return params;
-}
 
 
 
@@ -2007,40 +1902,11 @@ async function cancelInterest(recipientPhone){
         alert("Network Error while cancelling interest.");
     }
 }
-async function reloadAllProfiles() {
-    const res = await fetch(SHEET_CSV_URL + "&t=" + Date.now()); // force no cache
-    const csv = await res.text();
-
-    return new Promise(resolve => {
-        Papa.parse(csv, {
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                allProfiles = results.data || [];
-                resolve();
-            }
-        });
-    });
-}
-
-function refreshLoggedProfile() {
-    const phone = loggedProfile["Your Phone Number"];
-    if (!phone) return;
-
-    const updated = allProfiles.find(p => 
-        (p["Your Phone Number"] || "").trim() === phone.trim()
-    );
-
-    if (updated) {
-        loggedProfile = updated;
-        console.log("🔄 Logged profile refreshed:", loggedProfile);
-    } else {
-        console.warn("⚠ Unable to refresh loggedProfile after reload");
-    }
-}
 
 
 
   </script>
   </body>
   </html>
+
+
