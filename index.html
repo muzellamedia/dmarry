@@ -888,7 +888,7 @@ async function login(){
     const enteredDobClean = enteredDob.replace(/[^\d]/g, "/").replace(/\s+/g, "").trim();
 
     try {
-        const res = await fetch(SHEET_CSV_URL);
+        const res = await fetch(SHEET_CSV_URL + "&v=" + Date.now());
         const csv = await res.text();
 
         Papa.parse(csv, {
@@ -1335,95 +1335,103 @@ function editProfile() {
 }
  
 /* 💾 UPDATE PROFILE (NEW LOGIC) */
+/* 💾 UPDATE PROFILE — FINAL SUPER FAST VERSION */
 async function updateProfile() {
   if (!loggedProfile) { 
-      alert('Login required to update profile.'); 
+      alert('Login required to update profile.');
       showPage('pageLogin');
-      return; 
+      return;
   }
-    showLoadingPopup("Updating your profile...");
+
+  showLoadingPopup("Updating your profile...");
+
   const status = document.getElementById('editStatus');
   const form = document.getElementById('editForm');
-  
-  // ആവശ്യമായ ഫീൽഡുകൾ എല്ലാം പൂരിപ്പിച്ചു എന്ന് ഉറപ്പാക്കുന്നു
+
   if (!form.checkValidity()) {
       status.style.color = 'red';
       status.textContent = 'Please fill all required fields.';
+      hideLoadingPopup();
       return;
   }
-  
+
+  // Collect form data
   const fd = new FormData(form);
-  
-  // Create URLSearchParams object from FormData to send to Apps Script
+
   const params = new URLSearchParams();
-  for(const [key, value] of fd.entries()) {
-      // DOB field disabled ആയതുകൊണ്ട് FormData-യിൽ വരില്ല, അത് Apps Script-ൽ അവഗണിക്കാം.
+  for (const [key, value] of fd.entries()) {
       params.append(key, value);
   }
-  
-  // 1. Action ഉം Phone നമ്പറും ചേർക്കുന്നു
+
   params.append('action', 'editProfile');
-  appendUserIdentity(params); // ഇത് 'phone' parameter ചേർക്കുന്നു
+  appendUserIdentity(params);
 
   try {
       status.style.color = '#555';
-      status.textContent = 'Updating profile...';
-      
+      status.textContent = 'Updating profile... Please wait...';
+
       const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
       const text = await res.text();
 
       if (text.includes('PROFILE_UPDATED')) {
+
           status.style.color = 'green';
-          status.textContent = 'Profile updated successfully! Returning to search page...';
-          
-          // 2.5 സെക്കൻഡ് കാത്തിരിക്കുന്നത് Apps Script അപ്ഡേറ്റ് ചെയ്ത്, CSV-യിൽ മാറ്റം വരാനുള്ള സമയം നൽകാനാണ്.
-          setTimeout(async () => {
-              // 1. login() വീണ്ടും വിളിക്കുമ്പോൾ CSV റീലോഡ് ചെയ്യുകയും
-              //    പുതിയ ഡാറ്റ ഉപയോഗിച്ച് loggedProfile അപ്ഡേറ്റ് ചെയ്യുകയും
-              //    search പേജിലേക്ക് (pageSearch) പോകുകയും ചെയ്യും.
-              await login(); 
-              
-              // 2. ഈ delay ക്ക് ശേഷം സ്റ്റാറ്റസ് മെസ്സേജ് മാറ്റുന്നു
-              document.getElementById('editStatus').textContent = "Data Reloaded. Redirecting...";
-              
-          }, 2500); // 2.5 സെക്കൻഡ് ഡിലേ
-          
-      } else if (text.includes('PROFILE_NOT_FOUND')) {
+          status.textContent = 'Profile updated! Refreshing...';
+
+          // ⭐⭐⭐ MAIN FIX — SUPER FAST LIVE UPDATE ⭐⭐⭐
+          await reloadAllProfiles();      // 🔄 Load latest CSV from server
+          refreshLoggedProfile();         // 🔄 Get latest row for logged-in user
+          showMyProfile(loggedProfile);   // 🔄 Update “My Profile” UI instantly
+
+          showPage('pageSearch');         // 🔄 Go back to Search page
+
+      } 
+      else if (text.includes('PROFILE_NOT_FOUND')) {
           status.style.color = 'red';
           status.textContent = 'Error: Profile not found. Please re-login.';
-      } else {
+      } 
+      else {
           status.style.color = 'red';
           status.textContent = 'Error updating profile: ' + text;
       }
-  } catch(err) {
+
+  } catch (err) {
       status.style.color = 'red';
       status.textContent = 'Network error.';
       console.error(err);
   }
+
   hideLoadingPopup();
 }
 
+
 /* Change profile photo */
 function changePhoto() {
-  if (!loggedProfile) { alert('Please login first'); return; }
+  if (!loggedProfile) { 
+    alert('Please login first'); 
+    return; 
+  }
 
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/*';
+
   input.onchange = async () => {
     const file = input.files[0];
     if (!file) return;
     if (!confirm('Replace your profile photo?')) return;
 
     const reader = new FileReader();
+
     reader.onload = async (e) => {
       const base64 = e.target.result.split(',')[1];
+
       const formData = new FormData();
-  showLoadingPopup("Uploading your photo...");
-      formData.append('action','updatePhoto'); 
-      
-      appendUserIdentity(formData); 
-      
+      showLoadingPopup("Uploading your photo...");
+
+      formData.append('action', 'updatePhoto');
+      appendUserIdentity(formData);
+
       formData.append('photo', base64);
       formData.append('photoName', file.name);
       formData.append('photoType', file.type || 'image/jpeg');
@@ -1435,101 +1443,143 @@ function changePhoto() {
       try {
         const res = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
         const text = await res.text();
+
         if (text.includes('PHOTO_UPDATED')) {
+
           status.style.color = 'green';
-          status.textContent = 'Photo updated successfully. Reloading profile...';
-          
-          // ✅ ഇവിടെയാണ് പ്രധാന മാറ്റം
-          // 2.5 സെക്കൻഡിന് ശേഷം login() ഫംഗ്ഷൻ വിളിച്ച് പ്രൊഫൈൽ ഡാറ്റ വീണ്ടും ലോഡ് ചെയ്യുന്നു.
-          // (Google Sheets-ലെ അപ്ഡേറ്റ് CSV-യിൽ വരാനുള്ള സമയം നൽകുന്നു)
-          setTimeout(async () => {
-             // ഇവിടെ ലോഗിൻ വീണ്ടും വിളിക്കുന്നത് ഡാറ്റ വീണ്ടും സെർച്ച് ചെയ്ത് എടുക്കാൻ വേണ്ടിയാണ്.
-             // ലോഗിൻ ഫംഗ്ഷൻ 'pageSearch' ലേക്കാണ് പോകുന്നത്, അത് നിലവിലെ പേജ് ആണ്.
-             await login();
-             status.style.color = 'green';
-             status.textContent = 'Profile photo updated!';
-          }, 2500); // 2.5 സെക്കൻഡ് കാത്തിരിക്കുന്നു
-          
+          status.textContent = 'Photo updated. Refreshing...';
+
+          // ⭐⭐⭐ MAIN FIX — SUPER FAST LIVE UPDATE ⭐⭐⭐
+          await reloadAllProfiles();      // 🔄 Latest CSV data
+          refreshLoggedProfile();         // 🔄 Get updated user row
+          showMyProfile(loggedProfile);   // 🔄 Update UI instantly
+
         } else {
           status.style.color = 'red';
           status.textContent = 'Failed: ' + text;
         }
-      } catch (e) {
+
+      } catch (err) {
         status.style.color = 'red';
         status.textContent = 'Network error';
+        console.error(err);
       }
-  hideLoadingPopup();
+
+      hideLoadingPopup();
     };
+
     reader.readAsDataURL(file);
   };
+
   input.click();
 }
 
+
 /* Delete profile photo */
+/* 🗑️ DELETE PROFILE PHOTO — FINAL FAST VERSION */
 async function deletePhoto() {
-  if (!loggedProfile) { alert('Please login first'); return; }
-  if (!confirm('Remove your profile photo?')) return;
-
-  const formData = new FormData();
-  // ✅ മാറ്റം: പുതിയ ആക്ഷൻ പേര് ഉപയോഗിക്കുന്നു
-  formData.append('action', 'deletePhoto'); // നിങ്ങളുടെ Apps Script കോഡിൽ ഇത് 'deletePhoto' എന്ന് തന്നെയാണ് പ്രതീക്ഷിക്കുന്നതെങ്കിൽ മാറ്റം വരുത്തേണ്ടതില്ല.
-                                            // 'deletePhotoByPhone' എന്നാണ് ഉപയോഗിക്കുന്നതെങ്കിൽ, അത് ഇവിടെ കൊടുക്കുക.
-  
-  appendUserIdentity(formData); 
-
-  const status = document.getElementById('myProfileStatus');
-  status.style.color = '#555';
-  status.textContent = 'Deleting photo...';
-
-  try {
-    const res = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
-    const text = await res.text();
-    if (text.includes('PHOTO_DELETED')) {
-      status.style.color = 'green';
-      status.textContent = 'Photo deleted';
-      document.getElementById('myProfilePhoto').src = "https://via.placeholder.com/150?text=No+Photo";
-    } else {
-      status.style.color = 'red';
-      status.textContent = 'Failed: ' + text;
+    if (!loggedProfile) { 
+        alert('Please login first'); 
+        return; 
     }
-  } catch (e) {
-    status.style.color = 'red';
-    status.textContent = 'Network error';
-  }
+
+    if (!confirm('Remove your profile photo?')) return;
+
+    showLoadingPopup("Deleting your photo...");
+
+    const status = document.getElementById('myProfileStatus');
+    status.style.color = '#555';
+    status.textContent = 'Deleting photo... please wait...';
+
+    const formData = new FormData();
+    formData.append('action', 'deletePhoto');   // Apps Script action
+    appendUserIdentity(formData);               // adds phone number
+
+    try {
+        const res = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
+        const text = await res.text().then(t => t.trim());
+
+        hideLoadingPopup();
+
+        if (text.includes('PHOTO_DELETED')) {
+
+            status.style.color = 'green';
+            status.textContent = 'Photo removed successfully.';
+
+            // ⭐ UI Instant Refresh
+            document.getElementById('myProfilePhoto').src =
+                "https://via.placeholder.com/150?text=No+Photo";
+
+            // ⭐ Reload CSV → Update local loggedProfile
+            await reloadAllProfiles();
+            refreshLoggedProfile();
+            showMyProfile(loggedProfile);  // Live update
+
+        } else {
+            status.style.color = 'red';
+            status.textContent = 'Failed: ' + text;
+        }
+
+    } catch (e) {
+        hideLoadingPopup();
+        status.style.color = 'red';
+        status.textContent = 'Network error. Please try again.';
+        console.error(e);
+    }
 }
+
 
 /* Delete entire profile */
+/* ❌ DELETE ENTIRE PROFILE — FINAL SAFE VERSION */
 async function deleteProfile() {
-  if (!loggedProfile) { alert('Please login first'); return; }
-  if (!confirm('⚠️ Delete your entire profile permanently? This cannot be undone.')) return;
-
-  const formData = new FormData();
-  // ✅ മാറ്റം: പുതിയ ആക്ഷൻ പേര് ഉപയോഗിക്കുന്നു
-  formData.append('action', 'deleteProfile'); // നിങ്ങളുടെ Apps Script കോഡിൽ ഇത് 'deleteProfile' എന്ന് തന്നെയാണ് പ്രതീക്ഷിക്കുന്നതെങ്കിൽ മാറ്റം വരുത്തേണ്ടതില്ല.
-                                              // 'deleteProfileByPhone' എന്നാണ് ഉപയോഗിക്കുന്നതെങ്കിൽ, അത് ഇവിടെ കൊടുക്കുക.
-  
-  appendUserIdentity(formData); 
-
-  const status = document.getElementById('myProfileStatus');
-  status.style.color = '#555';
-  status.textContent = 'Deleting profile...';
-
-  try {
-    const res = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
-    const text = await res.text();
-    if (text.includes('PROFILE_DELETED')) {
-      status.style.color = 'green';
-      status.textContent = 'Profile deleted.';
-      logout();
-    } else {
-      status.style.color = 'red';
-      status.textContent = 'Failed: ' + text;
+    if (!loggedProfile) { 
+        alert('Please login first'); 
+        return; 
     }
-  } catch (e) {
-    status.style.color = 'red';
-    status.textContent = 'Network error';
-  }
+
+    if (!confirm('⚠️ Delete your entire profile permanently? This cannot be undone.')) {
+        return;
+    }
+
+    showLoadingPopup("Deleting your profile...");
+
+    const status = document.getElementById('myProfileStatus');
+    status.style.color = '#555';
+    status.textContent = 'Deleting profile... please wait...';
+
+    const formData = new FormData();
+    formData.append('action', 'deleteProfile');  
+    appendUserIdentity(formData);               // adds phone safely
+
+    try {
+        const res = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
+        const text = await res.text().then(t => t.trim());
+
+        hideLoadingPopup();
+
+        if (text.includes('PROFILE_DELETED')) {
+
+            status.style.color = 'green';
+            status.textContent = 'Your profile has been deleted permanently.';
+
+            // ⭐ Instant Safe Logout
+            setTimeout(() => {
+                logout(); // clears localStorage, back to login page
+            }, 1000);
+
+        } else {
+            status.style.color = 'red';
+            status.textContent = 'Failed: ' + text;
+        }
+
+    } catch (e) {
+        hideLoadingPopup();
+        status.style.color = 'red';
+        status.textContent = 'Network error. Please try again.';
+        console.error(e);
+    }
 }
+
 
   /* ========== UTILS ========== */
   function calculateAge(dobString){
@@ -2023,6 +2073,23 @@ function refreshLoggedProfile() {
         console.warn("⚠ Unable to refresh loggedProfile after reload");
     }
 }
+async function reloadAllProfiles() {
+  try {
+    const res = await fetch(SHEET_CSV_URL + "&v=" + Date.now());
+    const csv = await res.text();
+    Papa.parse(csv, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        allProfiles = results.data || [];
+        console.log("✅ CSV Reloaded Successfully");
+      }
+    });
+  } catch (e) {
+    console.error("CSV reload error:", e);
+  }
+}
+
 
   </script>
   </body>
