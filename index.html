@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
   <html lang="ml">
   <head>
@@ -78,9 +77,7 @@
   </style>
   </head>
   <body>
-  <!DOCTYPE html>
-<html lang="en">
-<head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Page</title>
@@ -102,7 +99,7 @@
     margin:0;
     padding:0;
     /* ബാക്ക്ഗ്രൗണ്ട് ഇമേജ് */
-    background:url('https://lh3.googleusercontent.com/d/1K9yibKVBVgZaCJWLsT7qSVJoswP1uYMF') no-repeat center center / cover;
+    background:url('https://lh3.googleusercontent.com/d/15Wn86jOqUovhFYpzjZZRANS8q1FsUe-0') no-repeat center center / cover;
     box-sizing:border-box;
     background-color:#333; /* ഇമേജ് ലോഡ് ചെയ്യാത്ത സാഹചര്യത്തിൽ */
   ">
@@ -716,35 +713,13 @@ modal.addEventListener('click', () => {
 </style>
 
 
-<!-- MODAL HTML -->
-<div id="imgModal" class="modal">
-  <button class="close-btn" onclick="closeModal()">✖</button>
-  <img id="modalImg" src="" alt="Full image">
-</div>
 
-<script>
-  const modal = document.getElementById("imgModal");
-  const modalImg = document.getElementById("modalImg");
-
-  // Open image fullscreen
-  function openModal(src) {
-    modalImg.src = src;
-    modal.classList.add("show");
-    document.body.classList.add("modal-open");
-  }
-
-  // Close modal
-  function closeModal() {
-    modal.classList.remove("show");
-    document.body.classList.remove("modal-open");
-  }
-</script>
 
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script>
   /* ========== CONFIG ========== */
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1gyZtWhSyqYoxHYJma6WfJcwspDnruNfJCypwEyCwXVZVcGlnoRrvWoliFzUEKqaq/exec"; // <-- set your script URL
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-PFYKaOR5zFIm4jLARnq_jUlZY_IHQwYfF--joF_UeI4iCofnxAsEdu3sZ_rOkovT/exec"; // <-- set your script URL
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHJLHXWQaMioqSExrL-vdbu65_py6Ti9KzPtkxXaMaj9CygZ9OFH1a3ne7rCQ0_fF_KhNc-OiPDmvo/pub?output=csv"; // your published CSV
 
 /* ========== STATE ========== */
@@ -1627,29 +1602,37 @@ async function loadAndDisplayInterests(type) {
 }
 /* ========== ACCEPT INTEREST ========== */
 async function acceptInterest(senderPhone) {
-    if (!loggedProfile) { return; }
+    if (!loggedProfile) return;
+
     if (!confirm('Accept this interest? Their contact details will be shared.')) return;
-    
+
     const recipientPhone = loggedProfile['Your Phone Number'];
-    
+
+    // 🟢 SHOW POPUP
+    showLoadingPopup("ACCEPTING… Please wait");
+
     const params = new URLSearchParams();
-    params.append('action', 'acceptInterest'); // Apps Script-ൽ ഈ action ആണ് പ്രോസസ്സ് ചെയ്യേണ്ടത്
+    params.append('action', 'acceptInterest');
     params.append('senderPhone', senderPhone);
-    params.append('recipientPhone', recipientPhone); 
+    params.append('recipientPhone', recipientPhone);
 
     try {
         const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
-        const text = await res.text();
-        
+        const text = await res.text().then(t => t.trim());
+
+        hideLoadingPopup(); // 🟢 HIDE POPUP IMMEDIATELY
+
         if (text.includes('INTEREST_ACCEPTED')) {
-            alert('Interest accepted! You can now see their details in Accepted Interests list.');
-            // അക്സപ്റ്റ് ചെയ്ത ശേഷം ലിസ്റ്റ് റീലോഡ് ചെയ്യുന്നു
-            showInterestList('received'); 
+            alert('Interest accepted!');
+
+            // Reload list
+            showInterestList('received');
         } else {
             alert('Error accepting interest: ' + text);
         }
     } catch (e) {
-        alert('Network Error during acceptance.');
+        hideLoadingPopup(); // 🟢 HIDE ON ERROR
+        alert('Network error.');
     }
 }
 
@@ -1660,6 +1643,9 @@ async function rejectInterest(senderPhone) {
 
     const recipientPhone = loggedProfile['Your Phone Number'];
 
+    // 🟢 SHOW POPUP
+    showLoadingPopup("REJECTING… Please wait");
+
     const params = new URLSearchParams();
     params.append('action', 'rejectInterest');
     params.append('senderPhone', senderPhone);
@@ -1669,18 +1655,20 @@ async function rejectInterest(senderPhone) {
         const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
         const text = await res.text().then(t => t.trim());
 
-        console.log("Reject response:", text);
+        hideLoadingPopup(); // 🟢 HIDE POPUP
 
         if (text.includes('INTEREST_REJECTED')) {
             alert('Interest rejected ❌');
-            showInterestList('received'); // reload list
+            showInterestList('received');
         } else {
             alert('Error rejecting interest: ' + text);
         }
     } catch (e) {
-        alert('Network Error rejecting interest.');
+        hideLoadingPopup(); // 🟢 HIDE POPUP
+        alert('Network error rejecting interest');
     }
 }
+
 
 /* ========== DISPLAY INTEREST PROFILES (PAGINATED VIEW) ========== */
 function displayInterestProfiles(listType = 'received'){
@@ -1762,8 +1750,8 @@ function displayInterestProfiles(listType = 'received'){
         <button onclick="nextInterestPage()" ${currentInterestPage === totalPages ? 'disabled' : ''}>Next</button>`;
 } 
 /* ========== SEND INTEREST FUNCTION (FINAL WORKING) ========== */
-async function sendInterest(recipientPhone){
-    if (!loggedProfile){
+async function sendInterest(recipientPhone) {
+    if (!loggedProfile) {
         alert("Please login to send interest.");
         showPage('pageLogin');
         return;
@@ -1771,6 +1759,15 @@ async function sendInterest(recipientPhone){
 
     const senderPhone = loggedProfile['Your Phone Number'];
 
+    // ----------------------------------------------------
+    // 👉 1. UI Update Immediately (no waiting)
+    // ----------------------------------------------------
+    interestsSentByMe.set(recipientPhone, "SENT");  
+    displayProfiles(); // instantly update button → CANCEL INTEREST
+
+    // ----------------------------------------------------
+    // 👉 2. Background API call (async)
+    // ----------------------------------------------------
     const params = new URLSearchParams();
     params.append("action", "sendInterest");
     params.append("senderPhone", senderPhone);
@@ -1780,28 +1777,32 @@ async function sendInterest(recipientPhone){
         const res = await fetch(SCRIPT_URL, { method: "POST", body: params });
         const text = await res.text().then(t => t.trim());
 
-        console.log("SERVER:", text);
-
-        // ✅ SUCCESS OR ALREADY SENT → UPDATE UI IMMEDIATELY
-        if (text.includes("INTEREST_SENT") || text.includes("ALREADY_SENT")) {
-
-            // 1) Mark in local memory/map 
-            interestsSentByMe.set(recipientPhone, "SENT");
-
-            // 2) Refresh only buttons (no reload)
-            displayProfiles();
-
+        if (text.includes("INTEREST_SENT")) {
+            console.log("Interest sent backend OK");
             return;
         }
 
-        // ✅ Unexpected response
-        alert("Error: " + text);
+        if (text.includes("ALREADY_SENT")) {
+            await loadSentInterests();
+            displayProfiles();
+            return;
+        }
 
-    } catch (err){
-        console.error(err);
-        alert("Network Error sending interest.");
+        // ----------------------------------------------------
+        // 👉 3. Error fallback — revert UI
+        // ----------------------------------------------------
+        alert("Server Error: " + text);
+        interestsSentByMe.delete(recipientPhone);
+        displayProfiles();
+
+    } catch (err) {
+        // Network error → revert UI
+        alert("Network error. Please try again.");
+        interestsSentByMe.delete(recipientPhone);
+        displayProfiles();
     }
 }
+
 
 
 
@@ -1839,23 +1840,24 @@ async function loadSentInterests() {
     try {
         const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
         const text = await res.text();
-
         let records = [];
+
         try {
             records = JSON.parse(text);
         } catch (e) {
-            console.log("Invalid JSON:", text);
+            console.warn("Invalid JSON from getSentInterests:", text);
+            interestsSentByMe.clear();
             return;
         }
 
         interestsSentByMe.clear();
-
         records.forEach(rec => {
-            interestsSentByMe.set(rec.recipientPhone, rec.status);
+            // Normalize status to uppercase tokens (SENT/ACCEPTED/REJECTED)
+            const st = (rec.status || "").toString().trim().toUpperCase();
+            interestsSentByMe.set((rec.recipientPhone || "").toString().trim(), st);
         });
 
-        console.log("✅ Updated sent interest map:", interestsSentByMe);
-
+        console.log("✅ Sent interests loaded:", Array.from(interestsSentByMe.entries()));
     } catch (e) {
         console.error("Error loading sent interests", e);
     }
@@ -1871,39 +1873,94 @@ async function cancelInterest(recipientPhone){
 
     const senderPhone = loggedProfile['Your Phone Number'];
 
-    if (!confirm("Cancel this interest?")) return;
+    // Step 1 — Instant UI Update
+    interestsSentByMe.delete(recipientPhone);
+    displayProfiles();
 
-    const params = new URLSearchParams();
-    params.append("action", "cancelInterest");
-    params.append("senderPhone", senderPhone);
-    params.append("recipientPhone", recipientPhone);
+    // Step 2 — Check latest status from server
+    const checkParams = new URLSearchParams();
+    checkParams.append("action", "getSentInterests");
+    checkParams.append("senderPhone", senderPhone);
 
     try {
-        const res = await fetch(SCRIPT_URL, { method: "POST", body: params });
-        const text = await res.text().then(t => t.trim());
+        const checkRes = await fetch(SCRIPT_URL, { method: "POST", body: checkParams });
+        const checkText = await checkRes.text();
+        let sentArr = [];
 
-        console.log("CANCEL SERVER:", text);
+        try {
+            sentArr = JSON.parse(checkText);
+        } catch(e){
+            console.log("JSON parse failed", checkText);
+        }
 
-        if (text.includes("INTEREST_CANCELLED")) {
+        const entry = sentArr.find(x => x.recipientPhone === recipientPhone);
 
-            // ✅ update UI immediately
-            interestsSentByMe.set(recipientPhone, null);
-
-            alert("Interest cancelled ✅");
-
-            displayProfiles();
+        // If backend already doesn't have PENDING
+        if (!entry || entry.status !== "SENT") {
+            console.log("No pending entry on server, safe to ignore cancel");
             return;
         }
 
+        // Step 3 — Now call cancel API
+        const params = new URLSearchParams();
+        params.append("action", "cancelInterest");
+        params.append("senderPhone", senderPhone);
+        params.append("recipientPhone", recipientPhone);
+
+        const res = await fetch(SCRIPT_URL, { method: "POST", body: params });
+        const text = await res.text().then(t => t.trim());
+
+        if (text.includes("INTEREST_CANCELLED")) {
+            console.log("Cancelled backend OK");
+            return;
+        }
+
+        // Error → Restore old UI
         alert("Error: " + text);
+        interestsSentByMe.set(recipientPhone, "SENT");
+        displayProfiles();
 
     } catch (err){
-        console.error(err);
-        alert("Network Error while cancelling interest.");
+        alert("Network error while cancelling.");
+        interestsSentByMe.set(recipientPhone, "SENT");
+        displayProfiles();
     }
 }
 
 
+function findProfile(phone){
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Database");
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+
+    const phoneIdx = headers.indexOf("Your Phone Number");
+
+    for (let i = 1; i < data.length; i++) {
+        if (String(data[i][phoneIdx]).trim() === String(phone).trim()) {
+            const row = data[i];
+            const obj = {};
+            headers.forEach((h, j) => obj[h] = row[j]);
+            return obj;
+        }
+    }
+    return null;
+}
+
+function refreshLoggedProfile() {
+    const phone = loggedProfile["Your Phone Number"];
+    if (!phone) return;
+
+    const updated = allProfiles.find(p => 
+        (p["Your Phone Number"] || "").trim() === phone.trim()
+    );
+
+    if (updated) {
+        loggedProfile = updated;
+        console.log("🔄 Logged profile refreshed:", loggedProfile);
+    } else {
+        console.warn("⚠ Unable to refresh loggedProfile after reload");
+    }
+}
 
   </script>
   </body>
