@@ -776,6 +776,8 @@ modal.addEventListener('click', () => {
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script>
+  let csvReady = false;
+
   /* ========== CONFIG ========== */
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-PFYKaOR5zFIm4jLARnq_jUlZY_IHQwYfF--joF_UeI4iCofnxAsEdu3sZ_rOkovT/exec"; // <-- set your script URL
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHJLHXWQaMioqSExrL-vdbu65_py6Ti9KzPtkxXaMaj9CygZ9OFH1a3ne7rCQ0_fF_KhNc-OiPDmvo/pub?output=csv"; // your published CSV
@@ -807,16 +809,11 @@ function showPage(id){
   if(myProfileEl) {
       myProfileEl.style.display = (id === 'pageSearch' && loggedProfile) ? 'block' : 'none'; 
   }
-  
-  // ✅ 1. ഉടൻ തന്നെ ഒരു സ്ക്രോൾ ചെയ്യുന്നു
-  window.scrollTo(0, 0); // No smooth behavior here
-  
-  // ✅ 2. 50 മില്ലിസെക്കൻഡ് കഴിഞ്ഞ് വീണ്ടും സ്ക്രോൾ ചെയ്യുന്നു (ഇതാണ് പ്രശ്നം പരിഹരിക്കുന്നത്)
-  // ബ്രൗസർ റെൻഡറിംഗ് പൂർത്തിയാക്കാൻ സമയം നൽകുന്നു.
-  setTimeout(() => {
-    window.scrollTo(0, 0); // നിർബന്ധമായും ടോപ്പിലേക്ക് സ്ക്രോൾ ചെയ്യുന്നു
-  }, 50);
+
+  // Only 1 scroll enough
+  window.scrollTo(0, 0);
 }
+
   /* Fill day/month/year selects (used in login + register) */
   function fillDobSelects(){
     const dayEls = document.querySelectorAll("#day, select[name='Day']");
@@ -834,39 +831,35 @@ function showPage(id){
   }
   // fillDobSelects(); // ✅ ഈ കോൾ ഇവിടെ നിന്ന് മാറ്റി അവസാനം ചേർക്കുന്നു.
 
-  /* Convert Google Drive share link to direct viewable lh3 url */
   function convertDriveLink(url) {
-    if (!url) return "";
+  if (!url) return "";
+  
+  let finalUrl = "";
 
-    // Case 1: already direct image (works for drive.google.com/uc)
-    if (url.includes("https://drive.google.com/uc?export=view&id=")) {
-      const fileId = url.split("id=")[1];
-      return "https://lh3.googleusercontent.com/d/" + fileId;
-    }
-
-    // Case 2: open?id=xxxxx
-    if (url.includes("open?id=")) {
-      const fileId = url.split("open?id=")[1].split("&")[0];
-      return "https://lh3.googleusercontent.com/d/" + fileId;
-    }
-
-    // Case 3: /file/d/xxxxx/
-    if (url.includes("/file/d/")) {
-      const fileId = url.split("/file/d/")[1].split("/")[0];
-      return "https://lh3.googleusercontent.com/d/" + fileId;
-    }
-
-    // Default return
-    return url;
+  if (url.includes("https://drive.google.com/uc?export=view&id=")) {
+    const fileId = url.split("id=")[1];
+    finalUrl = "https://lh3.googleusercontent.com/d/" + fileId;
+  } 
+  else if (url.includes("open?id=")) {
+    const fileId = url.split("open?id=")[1].split("&")[0];
+    finalUrl = "https://lh3.googleusercontent.com/d/" + fileId;
+  } 
+  else if (url.includes("/file/d/")) {
+    const fileId = url.split("/file/d/")[1].split("/")[0];
+    finalUrl = "https://lh3.googleusercontent.com/d/" + fileId;
   }
-modal.addEventListener("click", (e) => {
-  if (e.target === modal) closeModal();
-});
+  else {
+    finalUrl = url;
+  }
+
+  // ⭐ Cache Busting: Always load fresh
+  return finalUrl + "?v=" + Date.now();
+}
 
  
 
  /* ========== LOGIN - (FINAL UPDATED WITH SENT INTEREST LOADER) ========== */
-async function login(){
+async function login() {
     const phone = document.getElementById('phone').value.trim();
     const day = document.getElementById('day').value;
     const month = document.getElementById('month').value;
@@ -874,97 +867,43 @@ async function login(){
     const err = document.getElementById('error');
     err.textContent = "";
 
-    if (!phone) { 
-        err.textContent = "Please enter phone number."; 
-        return; 
-    }
-    if (!day || !month || !year) { 
-        err.textContent = "Please select full date of birth."; 
-        return; 
-    }
+    if (!phone) { err.textContent = "Please enter phone number."; return; }
+    if (!day || !month || !year) { err.textContent = "Please select full date of birth."; return; }
 
-    // User-entered DOB
-    const enteredDob = `${parseInt(day)}/${parseInt(month)}/${year}`;
-    const enteredDobClean = enteredDob.replace(/[^\d]/g, "/").replace(/\s+/g, "").trim();
+    const enteredDob = `${parseInt(day)}/${parseInt(month)}/${year}`
+        .replace(/[^\d]/g, "/")
+        .trim();
 
     try {
-        const res = await fetch(SHEET_CSV_URL + "&v=" + Date.now());
-        const csv = await res.text();
+        // ⭐ STEP 1 → Load CSV fully before login
+        await loadProfilesFully();
 
-        Papa.parse(csv, {
-            header: true,
-            skipEmptyLines: true,
-
-            complete: async function(results){
-                allProfiles = results.data || [];
-
-                const match = allProfiles.find(p => {
-                    const phoneDb = (p["Your Phone Number"] || "").trim();
-                    const dobDb = (p["Date of Birth"] || "").trim();
-
-                    const dobDbClean = dobDb.replace(/[^\d]/g, "/")
-                                            .replace(/\s+/g, "")
-                                            .trim();
-
-                    const parseParts = s => {
-                        const parts = s.split("/").filter(Boolean).map(x => parseInt(x) || 0);
-                        if (parts.length < 3) return [0, 0, 0];
-                        return parts;
-                    };
-
-                    const [d1, m1, y1] = parseParts(dobDbClean);
-                    const [d2, m2, y2] = parseParts(enteredDobClean);
-
-                    const dobMatch = (d1 === d2 && m1 === m2 && y1 === y2 && d1 !== 0);
-
-                    return phoneDb === phone && dobMatch;
-                });
-
-                if (match) {
-                    // ✅ Save logged profile
-                    loggedProfile = match;
-                    loggedInGender = (match.Gender || "").toLowerCase();
-                    const loggedReligion = (match.Religion || "").toLowerCase();
-                    const opposite = loggedInGender === "male" ? "female" : "male";
-
-                    // ✅ Filter opposite gender + same religion
-                    filteredProfiles = allProfiles.filter(p => {
-                        return (
-                            (p.Gender || "").toLowerCase() === opposite &&
-                            (p.Religion || "").toLowerCase() === loggedReligion
-                        );
-                    });
-
-                    // ✅ Show user dashboard
-                    showPage('pageSearch');
-                    showMyProfile(match);
-
-                    /* ✅✅✅ IMPORTANT → load all previously sent interests */
-                    await loadSentInterests();
-                    displayProfiles();
-                    /* ✅✅✅ END */
-
-                    // Scroll fix
-                    setTimeout(() => {
-                        window.scrollTo(0, 0);
-                    }, 100);
-
-                    // Save for identity
-                    localStorage.setItem('loggedProfile', JSON.stringify({
-                        "Your Phone Number": match["Your Phone Number"],
-                        "Date of Birth": match["Date of Birth"],
-                    }));
-
-                    console.log("✅ Profile saved:", match["Your Phone Number"]);
-
-                } else {
-                    err.textContent = "Invalid phone number or date of birth!";
-                }
-            }
+        // ⭐ STEP 2 → Now login check will work FIRST CLICK itself
+        const match = allProfiles.find(p => {
+            const phoneDb = (p["Your Phone Number"] || "").trim();
+            const dobDb = (p["Date of Birth"] || "").trim()
+                .replace(/[^\d]/g, "/")
+                .trim();
+            return phoneDb === phone && dobDb === enteredDob;
         });
 
+        if (match) {
+            loggedProfile = match;
+
+            localStorage.setItem('loggedProfile', JSON.stringify({
+                "Your Phone Number": match["Your Phone Number"],
+                "Date of Birth": match["Date of Birth"]
+            }));
+
+            showPage('pageSearch');
+            showMyProfile(match);
+
+        } else {
+            err.textContent = "Invalid phone number or date of birth!";
+        }
+
     } catch (e) {
-        err.textContent = "Error fetching data. Check CSV URL or network connection.";
+        err.textContent = "Network error!";
         console.error(e);
     }
 }
@@ -1143,7 +1082,7 @@ function applySearch(){
 
 /* ========== DISPLAY / PAGINATION ========== */
 function displayProfiles(){
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  
 
   const list = filteredProfiles || [];
   const resultsDiv = document.getElementById("results");
@@ -1252,7 +1191,7 @@ function nextPage(){
   if(currentPage < Math.ceil(filteredProfiles.length / profilesPerPage)){
     currentPage++;
     displayProfiles();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
   }
 }
 
@@ -1260,7 +1199,7 @@ function prevPage(){
   if(currentPage > 1){
     currentPage--;
     displayProfiles();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
   }
 }
 
@@ -1355,22 +1294,23 @@ async function updateProfile() {
       return;
   }
 
-  // Collect form data
+  // ⭐⭐ Correct: Use ONLY FormData (Apps Script needs this)
   const fd = new FormData(form);
+  fd.append("action", "editProfile");
 
-  const params = new URLSearchParams();
-  for (const [key, value] of fd.entries()) {
-      params.append(key, value);
-  }
-
-  params.append('action', 'editProfile');
-  appendUserIdentity(params);
+  // add phone number for server lookup
+  appendUserIdentity(fd);
 
   try {
       status.style.color = '#555';
       status.textContent = 'Updating profile... Please wait...';
 
-      const res = await fetch(SCRIPT_URL, { method: 'POST', body: params });
+      // ⭐⭐ Correct POST request
+      const res = await fetch(SCRIPT_URL, { 
+          method: 'POST', 
+          body: fd 
+      });
+
       const text = await res.text();
 
       if (text.includes('PROFILE_UPDATED')) {
@@ -1378,12 +1318,13 @@ async function updateProfile() {
           status.style.color = 'green';
           status.textContent = 'Profile updated! Refreshing...';
 
-          // ⭐⭐⭐ MAIN FIX — SUPER FAST LIVE UPDATE ⭐⭐⭐
-          await reloadAllProfiles();      // 🔄 Load latest CSV from server
-          refreshLoggedProfile();         // 🔄 Get latest row for logged-in user
-          showMyProfile(loggedProfile);   // 🔄 Update “My Profile” UI instantly
+          // 🔄 Refresh everything (correct & latest data)
+          await reloadAllProfiles();
+          refreshLoggedProfile();
+          localStorage.setItem("loggedProfile", JSON.stringify(loggedProfile));
+          showMyProfile(loggedProfile);
 
-          showPage('pageSearch');         // 🔄 Go back to Search page
+          showPage('pageSearch');  // back to search
 
       } 
       else if (text.includes('PROFILE_NOT_FOUND')) {
@@ -1399,10 +1340,11 @@ async function updateProfile() {
       status.style.color = 'red';
       status.textContent = 'Network error.';
       console.error(err);
+  } finally {
+      hideLoadingPopup();
   }
-
-  hideLoadingPopup();
 }
+
 
 
 /* Change profile photo */
@@ -1450,9 +1392,11 @@ function changePhoto() {
           status.textContent = 'Photo updated. Refreshing...';
 
           // ⭐⭐⭐ MAIN FIX — SUPER FAST LIVE UPDATE ⭐⭐⭐
-          await reloadAllProfiles();      // 🔄 Latest CSV data
-          refreshLoggedProfile();         // 🔄 Get updated user row
-          showMyProfile(loggedProfile);   // 🔄 Update UI instantly
+          await reloadAllProfiles();
+refreshLoggedProfile();
+localStorage.setItem("loggedProfile", JSON.stringify(loggedProfile));
+showMyProfile(loggedProfile);
+
 
         } else {
           status.style.color = 'red';
@@ -1510,10 +1454,12 @@ async function deletePhoto() {
             document.getElementById('myProfilePhoto').src =
                 "https://via.placeholder.com/150?text=No+Photo";
 
-            // ⭐ Reload CSV → Update local loggedProfile
             await reloadAllProfiles();
-            refreshLoggedProfile();
-            showMyProfile(loggedProfile);  // Live update
+refreshLoggedProfile();
+localStorage.setItem("loggedProfile", JSON.stringify(loggedProfile));
+showMyProfile(loggedProfile);
+
+
 
         } else {
             status.style.color = 'red';
@@ -1862,7 +1808,7 @@ function displayInterestProfiles(listType = 'received'){
         <button onclick="nextInterestPage()" ${currentInterestPage === totalPages ? 'disabled' : ''}>Next</button>`;
 } 
 /* ========== SEND INTEREST FUNCTION (FINAL WORKING) ========== */
-async function sendInterest(recipientPhone) {
+async function sendInterest(recipientPhone, btn) {
     if (!loggedProfile) {
         alert("Please login to send interest.");
         showPage('pageLogin');
@@ -1872,13 +1818,16 @@ async function sendInterest(recipientPhone) {
     const senderPhone = loggedProfile['Your Phone Number'];
 
     // ----------------------------------------------------
-    // 👉 1. UI Update Immediately (no waiting)
+    // 👉 1. Update ONLY this button immediately
     // ----------------------------------------------------
-    interestsSentByMe.set(recipientPhone, "SENT");  
-    displayProfiles(); // instantly update button → CANCEL INTEREST
+    interestsSentByMe.set(recipientPhone, "SENT");
+
+    btn.textContent = "Cancel Interest";
+    btn.classList.remove("send-btn");
+    btn.classList.add("cancel-btn");
 
     // ----------------------------------------------------
-    // 👉 2. Background API call (async)
+    // 👉 2. Background API call (NO UI RELOAD)
     // ----------------------------------------------------
     const params = new URLSearchParams();
     params.append("action", "sendInterest");
@@ -1887,7 +1836,7 @@ async function sendInterest(recipientPhone) {
 
     try {
         const res = await fetch(SCRIPT_URL, { method: "POST", body: params });
-        const text = await res.text().then(t => t.trim());
+        const text = (await res.text()).trim();
 
         if (text.includes("INTEREST_SENT")) {
             console.log("Interest sent backend OK");
@@ -1895,26 +1844,31 @@ async function sendInterest(recipientPhone) {
         }
 
         if (text.includes("ALREADY_SENT")) {
-            await loadSentInterests();
-            displayProfiles();
+            // backend says already sent → keep button as Cancel
+            interestsSentByMe.set(recipientPhone, "SENT");
             return;
         }
 
         // ----------------------------------------------------
-        // 👉 3. Error fallback — revert UI
+        // 👉 3. Error → revert only button
         // ----------------------------------------------------
         alert("Server Error: " + text);
         interestsSentByMe.delete(recipientPhone);
-        displayProfiles();
+
+        btn.textContent = "Send Interest";
+        btn.classList.remove("cancel-btn");
+        btn.classList.add("send-btn");
 
     } catch (err) {
-        // Network error → revert UI
+        // Network error → revert the same button
         alert("Network error. Please try again.");
         interestsSentByMe.delete(recipientPhone);
-        displayProfiles();
+
+        btn.textContent = "Send Interest";
+        btn.classList.remove("cancel-btn");
+        btn.classList.add("send-btn");
     }
 }
-
 
 
 
@@ -1975,9 +1929,8 @@ async function loadSentInterests() {
     }
 }
 
-/* ========== CANCEL INTEREST (NEW FUNCTION) ========== */
-async function cancelInterest(recipientPhone){
-    if (!loggedProfile){
+async function cancelInterest(recipientPhone, btn) {
+    if (!loggedProfile) {
         alert("Please login first.");
         showPage('pageLogin');
         return;
@@ -1985,11 +1938,18 @@ async function cancelInterest(recipientPhone){
 
     const senderPhone = loggedProfile['Your Phone Number'];
 
-    // Step 1 — Instant UI Update
+    // ----------------------------------------------------
+    // 👉 1. Update ONLY this button immediately
+    // ----------------------------------------------------
     interestsSentByMe.delete(recipientPhone);
-    displayProfiles();
 
-    // Step 2 — Check latest status from server
+    btn.textContent = "Send Interest ❤️";
+    btn.classList.remove("cancel-btn");
+    btn.classList.add("send-btn");
+
+    // ----------------------------------------------------
+    // 👉 2. Check latest status from server (NO UI RELOAD)
+    // ----------------------------------------------------
     const checkParams = new URLSearchParams();
     checkParams.append("action", "getSentInterests");
     checkParams.append("senderPhone", senderPhone);
@@ -1997,45 +1957,55 @@ async function cancelInterest(recipientPhone){
     try {
         const checkRes = await fetch(SCRIPT_URL, { method: "POST", body: checkParams });
         const checkText = await checkRes.text();
-        let sentArr = [];
 
+        let sentArr = [];
         try {
             sentArr = JSON.parse(checkText);
-        } catch(e){
+        } catch (e) {
             console.log("JSON parse failed", checkText);
         }
 
         const entry = sentArr.find(x => x.recipientPhone === recipientPhone);
 
-        // If backend already doesn't have PENDING
+        // If already cancelled in backend:
         if (!entry || entry.status !== "SENT") {
-            console.log("No pending entry on server, safe to ignore cancel");
+            console.log("Already cancelled on server");
             return;
         }
 
-        // Step 3 — Now call cancel API
+        // ----------------------------------------------------
+        // 👉 3. Send cancel request to server
+        // ----------------------------------------------------
         const params = new URLSearchParams();
         params.append("action", "cancelInterest");
         params.append("senderPhone", senderPhone);
         params.append("recipientPhone", recipientPhone);
 
         const res = await fetch(SCRIPT_URL, { method: "POST", body: params });
-        const text = await res.text().then(t => t.trim());
+        const text = (await res.text()).trim();
 
         if (text.includes("INTEREST_CANCELLED")) {
-            console.log("Cancelled backend OK");
+            console.log("Cancel OK on backend");
             return;
         }
 
-        // Error → Restore old UI
+        // ----------------------------------------------------
+        // 👉 4. Error → restore previous UI (only button)
+        // ----------------------------------------------------
         alert("Error: " + text);
-        interestsSentByMe.set(recipientPhone, "SENT");
-        displayProfiles();
 
-    } catch (err){
-        alert("Network error while cancelling.");
         interestsSentByMe.set(recipientPhone, "SENT");
-        displayProfiles();
+        btn.textContent = "Cancel Interest ❌";
+        btn.classList.remove("send-btn");
+        btn.classList.add("cancel-btn");
+
+    } catch (err) {
+        alert("Network error while cancelling.");
+
+        interestsSentByMe.set(recipientPhone, "SENT");
+        btn.textContent = "Cancel Interest ❌";
+        btn.classList.remove("send-btn");
+        btn.classList.add("cancel-btn");
     }
 }
 
@@ -2074,26 +2044,90 @@ function refreshLoggedProfile() {
     }
 }
 async function reloadAllProfiles() {
-  try {
-    const res = await fetch(SHEET_CSV_URL + "&v=" + Date.now());
-    const csv = await res.text();
-    Papa.parse(csv, {
-      header: true,
-      skipEmptyLines: true,
-      complete: function(results) {
-        allProfiles = results.data || [];
-        console.log("✅ CSV Reloaded Successfully");
-      }
-    });
-  } catch (e) {
-    console.error("CSV reload error:", e);
-  }
+  return new Promise(async (resolve, reject) => {
+    try {
+      const res = await fetch(SHEET_CSV_URL, {
+         cache: "no-store"
+      });
+
+      const csv = await res.text();
+
+      Papa.parse(csv, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          allProfiles = results.data || [];
+          resolve(true);
+        }
+      });
+
+    } catch (e) {
+      reject(e);
+    }
+  });
 }
+async function loadProfiles() {
+    const res = await fetch(SHEET_CSV_URL, { cache: "no-store" });
+    const csv = await res.text();
+
+    return new Promise((resolve, reject) => {
+        Papa.parse(csv, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                resolve(results.data);
+            },
+            error: reject
+        });
+    });
+}
+async function preloadCSV() {
+    try {
+        const res = await fetch(SHEET_CSV_URL + "&v=" + Date.now());
+        const csv = await res.text();
+
+        allProfiles = await new Promise((resolve, reject) => {
+            Papa.parse(csv, {
+                header: true,
+                skipEmptyLines: true,
+                complete: r => resolve(r.data),
+                error: reject
+            });
+        });
+
+        csvReady = true;  // 🔥 CSV loaded completely
+        console.log("CSV Loaded Successfully");
+
+    } catch (err) {
+        console.error("CSV Load Failed", err);
+    }
+}
+async function loadProfilesFully() {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const res = await fetch(SHEET_CSV_URL + "&v=" + Date.now(), { cache: "no-store" });
+            const csv = await res.text();
+
+            Papa.parse(csv, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function (results) {
+                    allProfiles = results.data || [];
+                    resolve(true);
+                },
+                error: reject
+            });
+
+        } catch (e) {
+            reject(e);
+        }
+    });
+}
+
 
 
   </script>
   </body>
   </html>
-
 
 
