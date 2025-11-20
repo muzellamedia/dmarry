@@ -99,7 +99,7 @@
     margin:0;
     padding:0;
     /* ബാക്ക്ഗ്രൗണ്ട് ഇമേജ് */
-    background:url('https://lh3.googleusercontent.com/d/15Wn86jOqUovhFYpzjZZRANS8q1FsUe-0') no-repeat center center / cover;
+    background:url('https://lh3.googleusercontent.com/d/1bkgo2MQU37CcnsntMbi28JjNjZkbAsOP') no-repeat center center / cover;
     box-sizing:border-box;
     background-color:#333; /* ഇമേജ് ലോഡ് ചെയ്യാത്ത സാഹചര്യത്തിൽ */
   ">
@@ -897,6 +897,8 @@ async function login() {
 
             showPage('pageSearch');
             showMyProfile(match);
+            await loadSentInterests();  // ⭐ VERY IMPORTANT
+
 
         } else {
             err.textContent = "Invalid phone number or date of birth!";
@@ -1038,12 +1040,21 @@ hideLoadingPopup();  // ✅ popup close
 }
 
   /* ========== SEARCH (UPDATED) ========== */
-function applySearch(){
+/* ========== SEARCH (UPDATED) ========== */
+async function applySearch() {
+
+  showLoadingPopup("Searching… Please wait");   // ⭐ FIRST LINE
+
+  await loadSentInterests();   // ⭐ Refresh latest status
+  
   if (!loggedProfile) {
     alert("Please login first to search.");
     showPage('pageLogin');
+    hideLoadingPopup();        // ⭐ very important
     return;
   }
+
+
   
   // 1. ലോഗിൻ ചെയ്ത യൂസറുടെ വിവരങ്ങൾ എടുക്കുന്നു
   const loggedReligion = (loggedProfile.Religion || "").toLowerCase();
@@ -1078,6 +1089,7 @@ function applySearch(){
   currentPage = 1;
   showPage('pageResults');
   displayProfiles();
+   hideLoadingPopup();   // ⭐ HIDE POPUP
 }
 
 /* ========== DISPLAY / PAGINATION ========== */
@@ -1117,7 +1129,7 @@ function displayProfiles(){
 
     if (interestStatus === 'SENT') {
     buttonHtml = `
-        <button onclick="cancelInterest('${recipientPhone}')"
+        <button onclick="cancelInterest('${recipientPhone}', this)"
                 class="action-btn"
                 style="background:#ff8800;">
             Cancel Interest ❌
@@ -1125,27 +1137,25 @@ function displayProfiles(){
     `;
 }
 else if (interestStatus === 'ACCEPTED') {
-    buttonHtml = `<button disabled class="action-btn" style="background:#007bff;">Interest Accepted 🤝</button>`;
+    buttonHtml = `
+        <button disabled class="action-btn" style="background:#007bff;">
+            Interest Accepted 🤝
+        </button>`;
 }
 else if (interestStatus === 'REJECTED') {
-    buttonHtml = `<button disabled class="action-btn" style="background:#dc3545;">
-        Interest Rejected ❌
-    </button>`;
-}
-else if (interestStatus === 'Cancelled') {
-    // Cancelled → Should allow sending again
-    buttonHtml = `<button class="action-btn" 
-        onclick="sendInterest('${recipientPhone}')"
-        style="background:#00b050;">
-        Send Interest ❤️
-    </button>`;
+    buttonHtml = `
+        <button disabled class="action-btn" style="background:#dc3545;">
+            Interest Rejected ❌
+        </button>`;
 }
 else {
-    buttonHtml = `<button class="action-btn" 
-        onclick="sendInterest('${recipientPhone}')"
-        style="background:#00b050;">
-        Send Interest ❤️
-    </button>`;
+    buttonHtml = `
+        <button class="action-btn"
+            onclick="sendInterest('${recipientPhone}', this)"
+            style="background:#00b050;">
+            Send Interest ❤️
+        </button>
+    `;
 }
 
 
@@ -1823,8 +1833,8 @@ async function sendInterest(recipientPhone, btn) {
     interestsSentByMe.set(recipientPhone, "SENT");
 
     btn.textContent = "Cancel Interest";
-    btn.classList.remove("send-btn");
-    btn.classList.add("cancel-btn");
+    btn.textContent = "Cancel Interest ❌";
+btn.style.background = "#ff8800";
 
     // ----------------------------------------------------
     // 👉 2. Background API call (NO UI RELOAD)
@@ -1944,8 +1954,9 @@ async function cancelInterest(recipientPhone, btn) {
     interestsSentByMe.delete(recipientPhone);
 
     btn.textContent = "Send Interest ❤️";
-    btn.classList.remove("cancel-btn");
-    btn.classList.add("send-btn");
+    btn.textContent = "Send Interest ❤️";
+btn.style.background = "#00b050";
+
 
     // ----------------------------------------------------
     // 👉 2. Check latest status from server (NO UI RELOAD)
@@ -2129,6 +2140,5 @@ async function loadProfilesFully() {
   </script>
   </body>
   </html>
-
 
 
