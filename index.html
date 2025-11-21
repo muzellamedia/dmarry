@@ -99,7 +99,7 @@
     margin:0;
     padding:0;
     /* ബാക്ക്ഗ്രൗണ്ട് ഇമേജ് */
-    background:url('https://lh3.googleusercontent.com/d/1bkgo2MQU37CcnsntMbi28JjNjZkbAsOP') no-repeat center center / cover;
+    background:url('https://lh3.googleusercontent.com/d/1sSi8iALlmQuphc3QOml3URtthfEGOq0-') no-repeat center center / cover;
     box-sizing:border-box;
     background-color:#333; /* ഇമേജ് ലോഡ് ചെയ്യാത്ത സാഹചര്യത്തിൽ */
   ">
@@ -1201,17 +1201,17 @@ function nextPage(){
   if(currentPage < Math.ceil(filteredProfiles.length / profilesPerPage)){
     currentPage++;
     displayProfiles();
-    
+    window.scrollTo({ top: 0, behavior: "smooth" });  // ⭐ ADD THIS
   }
 }
-
 function prevPage(){
   if(currentPage > 1){
     currentPage--;
     displayProfiles();
-    
+    window.scrollTo({ top: 0, behavior: "smooth" });  // ⭐ ADD THIS
   }
 }
+
 
  /* ========== MY PROFILE UI & ACTIONS (UPDATED) ========== */
 function showMyProfile(profile){
@@ -2140,6 +2140,5 @@ async function loadProfilesFully() {
   </script>
   </body>
   </html>
-
 
 
