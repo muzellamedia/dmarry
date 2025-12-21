@@ -49,6 +49,10 @@
 @media (max-width:640px){
   /* ... (മറ്റെന്തെങ്കിലും സ്റ്റൈലുകൾ ഉണ്ടെങ്കിൽ അതിനോട് ചേർക്കുക) */
 }
+@media (max-width:600px){
+  .card div[style*="grid-template-columns"]{
+    grid-template-columns:1fr !important;
+}
 
 /* നിങ്ങളുടെ നിലവിലുള്ള <style> സെക്ഷനിൽ ഇത് കൂടി ചേർക്കുക */
 
@@ -130,9 +134,33 @@
       alt="DM Logo"
       style="width:100px;height:100px;margin:0 auto 15px auto;display:block;border-radius:50%;border:3px solid #fff;">
 
-    <h3 style="color:#ff0;font-size:16px;line-height:1.4;margin-bottom:20px;font-weight:600;">
-      കേരളത്തിലെ ഭിന്നശേഷിക്കാർക്ക് സൗജന്യ മാട്രിമോണി വെബ്സൈറ്റ്
-    </h3>
+    <h3 style="
+  color:#ff0;
+  font-size:13px;
+  line-height:1.3;
+  margin-bottom:12px;
+  font-weight:500;
+">
+  കേരളത്തിലെ ഭിന്നശേഷിക്കാർക്ക് സൗജന്യ മാട്രിമോണി വെബ്സൈറ്റ്
+</h3>
+
+<a href="https://warehouse.appilix.com/uploads/app-apk-69456acc2ba46-1766157004.apk"
+   target="_blank"
+   style="
+     display:inline-block;
+     background:#990808;
+     color:#fff;
+     text-decoration:none;
+     padding:10px 18px;
+     border-radius:20px;
+     font-size:14px;
+     font-weight:bold;
+     box-shadow:0 4px 10px rgba(0,0,0,0.25);
+     margin-bottom:18px;
+   ">
+  📲 Download Android App
+</a>
+
     
     <label style="display:block;text-align:left;font-size:14px;margin:6px 0 4px 4px;font-weight:500;">Your Phone Number</label>
     <input type="tel" id="phone" placeholder="Enter your registered phone number"
@@ -546,10 +574,16 @@ function closeSuccessPopup() {
 
   <h2 style="color:#003366;margin-bottom:15px;">My Profile Details</h2>
 
-  <img id="myProfilePhoto" 
-       src="https://via.placeholder.com/150?text=No+Photo" 
-       alt="Profile Photo" 
-       style="width:140px;height:140px;border-radius:50%;border:4px solid #00b050;object-fit:cover;margin-bottom:15px;">
+  <img id="myProfilePhoto"
+     style="
+       width:160px;
+       height:200px;
+       border-radius:12px;
+       object-fit:cover;
+       border:4px solid #00b050;
+       box-shadow:0 4px 12px rgba(0,0,0,0.15);
+       margin-bottom:15px;">
+
 
   <div id="myProfileDetails" class="profile-details" 
        style="background:#f9f9f9;border-radius:10px;padding:15px;margin-bottom:20px;text-align:left;box-shadow:0 0 6px rgba(0,0,0,0.1);">
@@ -829,7 +863,36 @@ function showPage(id){
       for(let i=new Date().getFullYear(); i>=1960; i--) yearEls.forEach(e=>e.insertAdjacentHTML('beforeend',`<option value="${i}">${i}</option>`));
     }
   }
-  // fillDobSelects(); // ✅ ഈ കോൾ ഇവിടെ നിന്ന് മാറ്റി അവസാനം ചേർക്കുന്നു.
+  /* ===============================
+   INITIAL LOAD (IMPORTANT PART)
+   =============================== */
+
+fillDobSelects();   // ✅ FIRST: dropdown fill
+
+// 🔐 AUTO-FILL LOGIN DETAILS (Option 2)
+const savedAuto = localStorage.getItem("autoLogin");
+if (savedAuto) {
+  try {
+    const data = JSON.parse(savedAuto);
+
+    if (data.phone) {
+      document.getElementById("phone").value = data.phone;
+
+      if (data.dob) {
+        const parts = data.dob.replace(/[^\d]/g, "/").split("/");
+        if (parts.length === 3) {
+          document.getElementById("day").value = parseInt(parts[0]);
+          document.getElementById("month").value = parseInt(parts[1]);
+          document.getElementById("year").value = parts[2];
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("Autofill failed", e);
+  }
+}
+
+showPage('pageLogin');   // ✅ LAST: show login page
 
   function convertDriveLink(url) {
   if (!url) return "";
@@ -1128,35 +1191,38 @@ function displayProfiles(){
       : null;
 
     if (interestStatus === 'SENT') {
-    buttonHtml = `
-        <button onclick="cancelInterest('${recipientPhone}', this)"
-                class="action-btn"
-                style="background:#ff8800;">
-            Cancel Interest ❌
-        </button>
-    `;
+  buttonHtml = `
+    <button class="action-btn"
+            onclick="toggleInterest('${recipientPhone}', this)"
+            style="background:#ff8800;">
+        Cancel Interest ❌
+    </button>
+  `;
 }
 else if (interestStatus === 'ACCEPTED') {
-    buttonHtml = `
-        <button disabled class="action-btn" style="background:#007bff;">
-            Interest Accepted 🤝
-        </button>`;
+  buttonHtml = `
+    <button disabled class="action-btn" style="background:#007bff;">
+        Interest Accepted 🤝
+    </button>
+  `;
 }
 else if (interestStatus === 'REJECTED') {
-    buttonHtml = `
-        <button disabled class="action-btn" style="background:#dc3545;">
-            Interest Rejected ❌
-        </button>`;
+  buttonHtml = `
+    <button disabled class="action-btn" style="background:#dc3545;">
+        Interest Rejected ❌
+    </button>
+  `;
 }
 else {
-    buttonHtml = `
-        <button class="action-btn"
-            onclick="sendInterest('${recipientPhone}', this)"
+  buttonHtml = `
+    <button class="action-btn"
+            onclick="toggleInterest('${recipientPhone}', this)"
             style="background:#00b050;">
-            Send Interest ❤️
-        </button>
-    `;
+        Send Interest ❤️
+    </button>
+  `;
 }
+
 
 
 
@@ -1164,27 +1230,105 @@ else {
 
     // ✅ Profile card structure
     card.innerHTML = `
-      ${photoHtml}
-      <div class="info">
-        <b>Name:</b> ${p.Name || ''}<br>
-        <b>Age:</b> ${calculateAge(p['Date of Birth']) || 'N/A'}<br>
-        <b>Gender:</b> ${p.Gender || ''}<br>
-        <b>Religion:</b> ${p.Religion || ''}<br>
-        <b>Caste:</b> ${p.Caste || ''}<br>
-        <b>Disability:</b> ${p['Disability Details'] || ''}<br>
-        <b>Education:</b> ${p.Education || ''}<br>
-        <b>Job:</b> ${p.Job || ''}<br>
-        <b>Marital Status:</b> ${p['Marital Status'] || ''}<br>
-        <b>Full Address:</b> ${p['Full Address'] || ''}<br>
-        <b>District:</b> ${p.District || ''}<br>
-        <b>Contact 1:</b> ${p['Contact Number 1'] || ''}<br>
-        <b>Contact 2:</b> ${p['Contact Number 2'] || ''}<br>
-        <b>About Me:</b> ${p['About Me'] || ''}<br>
-      </div>
-      <div style="text-align:center; margin-top:10px;">
-        ${buttonHtml}
-      </div>
-    `;
+  ${photoHtml}
+
+  <div style="
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    font-size:14px;
+    margin-top:10px;
+  ">
+    <div><b>Name</b><br>${p.Name || ''}</div>
+    <div><b>Age</b><br>${calculateAge(p['Date of Birth']) || 'N/A'}</div>
+
+    <div><b>Gender</b><br>${p.Gender || ''}</div>
+    <div><b>Height</b><br>${p.Height || ''}</div>
+
+    <div><b>Religion</b><br>${p.Religion || ''}</div>
+    <div><b>Caste</b><br>${p.Caste || ''}</div>
+
+    <div><b>Disability</b><br>${p['Disability Details'] || ''}</div>
+    <div><b>Marital Status</b><br>${p['Marital Status'] || ''}</div>
+
+    <div><b>Education</b><br>${p.Education || ''}</div>
+    <div><b>Job</b><br>${p.Job || ''}</div>
+
+    <div><b>District</b><br>${p.District || ''}</div>
+  </div>
+  
+  <div style="
+  margin-top:10px;
+  background:#fff7ed;
+  padding:10px;
+  border-radius:10px;
+  font-size:14px;
+  border:1px solid #fed7aa;
+">
+  <b>Full Address</b><br>
+  ${p['Full Address'] || ''}
+</div>
+
+
+  <div style="
+    margin-top:12px;
+    background:#f8fafc;
+    padding:10px;
+    border-radius:10px;
+    font-size:14px;
+  ">
+    <b>About</b><br>
+    ${p['About Me'] || ''}
+  </div>
+
+  <!-- 📞 CONTACT BOXES -->
+  <div style="
+    display:flex;
+    gap:10px;
+    margin-top:12px;
+  ">
+    ${p['Contact Number 1'] ? `
+      <a href="tel:${p['Contact Number 1']}"
+         style="
+           flex:1;
+           text-decoration:none;
+           background:#e6fffa;
+           border:2px solid #00b050;
+           color:#065f46;
+           padding:12px;
+           text-align:center;
+           border-radius:10px;
+           font-size:16px;
+           font-weight:bold;
+         ">
+        📞 ${p['Contact Number 1']}
+      </a>
+    ` : ''}
+
+    ${p['Contact Number 2'] ? `
+      <a href="tel:${p['Contact Number 2']}"
+         style="
+           flex:1;
+           text-decoration:none;
+           background:#e0f2fe;
+           border:2px solid #0284c7;
+           color:#075985;
+           padding:12px;
+           text-align:center;
+           border-radius:10px;
+           font-size:16px;
+           font-weight:bold;
+         ">
+        📞 ${p['Contact Number 2']}
+      </a>
+    ` : ''}
+  </div>
+
+  <div style="text-align:center;margin-top:14px;">
+    ${buttonHtml}
+  </div>
+`;
+
     resultsDiv.appendChild(card);
   });
 
@@ -1211,43 +1355,89 @@ function prevPage(){
     window.scrollTo({ top: 0, behavior: "smooth" });  // ⭐ ADD THIS
   }
 }
+async function toggleInterest(recipientPhone, btn) {
+
+  if (!loggedProfile) {
+    alert("Please login first.");
+    showPage('pageLogin');
+    return;
+  }
+
+  const status = interestsSentByMe.get(recipientPhone);
+
+  if (status === "SENT") {
+    await cancelInterest(recipientPhone, btn);
+  } else {
+    await sendInterest(recipientPhone, btn);
+  }
+}
 
 
  /* ========== MY PROFILE UI & ACTIONS (UPDATED) ========== */
 function showMyProfile(profile){
   if(!profile) return;
+
   document.getElementById('myProfileSection').style.display = 'block';
-  const photo = convertDriveLink(profile['Photo Link'] || profile['Upload Your Photo'] || "");
-  document.getElementById('myProfilePhoto').src = photo || "https://via.placeholder.com/150?text=No+Photo";
-  
+
+  const photo = convertDriveLink(
+    profile['Photo Link'] || profile['Upload Your Photo'] || ""
+  );
+
+  // ✅ Square profile photo
+  document.getElementById('myProfilePhoto').src =
+    photo || "https://via.placeholder.com/160?text=No+Photo";
+
   const details = document.getElementById('myProfileDetails');
-  
-  // ✅ പുതിയ സ്റ്റൈലിംഗ്, കൂടുതൽ ഡീറ്റെയിൽസ് ചേർക്കുന്നു
+
   details.innerHTML = `
-    <h3 style="margin:6px 0;">${escapeHtml(profile.Name||'')}</h3>
-    
-    <div style="text-align:left; margin: 10px auto; font-size: 15px;">
-        <p><b>Date of Birth:</b> ${escapeHtml(profile["Date of Birth"]||'')}</p>
-        <p><b>Age:</b> ${calculateAge(profile['Date of Birth']) || 'N/A'}</p>
-        <p><b>Gender:</b> ${escapeHtml(profile.Gender||'')}</p>
-        <p><b>Height:</b> ${escapeHtml(profile.Height||'')}</p>
-        <p><b>Religion:</b> ${escapeHtml(profile.Religion||'')}</p>
-        <p><b>Caste:</b> ${escapeHtml(profile.Caste||'')}</p>
-        <p><b>Disability Details:</b> ${escapeHtml(profile["Disability Details"]||'')}</p>
-        <p><b>Education:</b> ${escapeHtml(profile.Education||'')}</p>
-        <p><b>Job:</b> ${escapeHtml(profile.Job||'')}</p>
-        <p><b>Marital Status:</b> ${escapeHtml(profile["Marital Status"]||'')}</p>
-        <p><b>District:</b> ${escapeHtml(profile.District||'')}</p>
-        
-        <div style="text-align:left; margin: 10px auto; font-size: 15px;">
-            <b>Contact Number 1:</b> ${escapeHtml(profile["Contact Number 1"]||'')}</p>
-        <p><b>Contact Number 2:</b> ${escapeHtml(profile["Contact Number 2"]||'')}</p>
-        <p><b>Full Address:</b> ${escapeHtml(profile["Full Address"]||'')}</p>
-        
-        <p style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
-            <b>About Me:</b> ${escapeHtml(profile["About Me"]||'')}</p>
+    <div style="
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+      font-size:15px;
+      line-height:1.4;
+    ">
+
+      <div><b>Name</b><br>${escapeHtml(profile.Name||'')}</div>
+      <div><b>Age</b><br>${calculateAge(profile['Date of Birth']) || 'N/A'}</div>
+
+      <div><b>Gender</b><br>${escapeHtml(profile.Gender||'')}</div>
+      <div><b>Height</b><br>${escapeHtml(profile.Height||'')}</div>
+
+      <div><b>Religion</b><br>${escapeHtml(profile.Religion||'')}</div>
+      <div><b>Caste</b><br>${escapeHtml(profile.Caste||'')}</div>
+
+      <div><b>Disability</b><br>${escapeHtml(profile["Disability Details"]||'')}</div>
+      <div><b>Marital Status</b><br>${escapeHtml(profile["Marital Status"]||'')}</div>
+
+      <div><b>Education</b><br>${escapeHtml(profile.Education||'')}</div>
+      <div><b>Job</b><br>${escapeHtml(profile.Job||'')}</div>
+
+      <div><b>District</b><br>${escapeHtml(profile.District||'')}</div>
+      <div><b>Date of Birth</b><br>${escapeHtml(profile["Date of Birth"]||'')}</div>
+
+    </div>
+
+    <hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb">
+
+    <div style="font-size:15px;">
+      <p><b>Contact Number 1:</b> ${escapeHtml(profile["Contact Number 1"]||'')}</p>
+      <p><b>Contact Number 2:</b> ${escapeHtml(profile["Contact Number 2"]||'')}</p>
+      <p><b>Full Address:</b> ${escapeHtml(profile["Full Address"]||'')}</p>
+    </div>
+
+    <div style="
+      margin-top:14px;
+      background:#f1f5f9;
+      padding:14px;
+      border-radius:10px;
+      font-size:15px;
+    ">
+      <b>About Me</b><br>
+      ${escapeHtml(profile["About Me"]||'')}
     </div>
   `;
+
   
   // store locally for actions (only phone is needed for action identity)
   localStorage.setItem('loggedProfile', JSON.stringify({
@@ -1819,13 +2009,22 @@ function displayInterestProfiles(listType = 'received'){
 } 
 /* ========== SEND INTEREST FUNCTION (FINAL WORKING) ========== */
 async function sendInterest(recipientPhone, btn) {
-    if (!loggedProfile) {
-        alert("Please login to send interest.");
-        showPage('pageLogin');
-        return;
-    }
 
-    const senderPhone = loggedProfile['Your Phone Number'];
+  // ❌ Login ഇല്ലെങ്കിൽ countdown വേണ്ട
+  if (!loggedProfile) {
+    alert("Please login to send interest.");
+    showPage('pageLogin');
+    return;
+  }
+
+  // ✅ Login OK → show countdown
+  showClickCountdown("Sending Interest in");
+
+  const senderPhone = loggedProfile['Your Phone Number'];
+
+  // ⬇️ ഇവിടെ നിന്റെ EXISTING CODE 그대로
+
+
 
     // ----------------------------------------------------
     // 👉 1. Update ONLY this button immediately
@@ -1902,6 +2101,45 @@ function prevInterestPage(){
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
+function showClickCountdown(text){
+  let count = 3;
+
+  const popup = document.createElement("div");
+  popup.style.cssText = `
+    position:fixed;
+    top:0;left:0;right:0;bottom:0;
+    background:rgba(0,0,0,0.6);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:99999;
+  `;
+
+  popup.innerHTML = `
+    <div style="
+      background:#111;
+      color:#fff;
+      padding:22px 35px;
+      border-radius:12px;
+      text-align:center;
+      min-width:240px;">
+      <div style="font-size:18px;margin-bottom:10px;">${text}</div>
+      <div id="cdNum" style="font-size:32px;font-weight:bold;">${count}</div>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+
+  const timer = setInterval(() => {
+    count--;
+    document.getElementById("cdNum").textContent = count;
+
+    if(count === 0){
+      clearInterval(timer);
+      document.body.removeChild(popup);
+    }
+  }, 1000);
+}
 
 
 /* ========== LOAD SENT INTERESTS AFTER LOGIN ========== */
@@ -1945,6 +2183,7 @@ async function cancelInterest(recipientPhone, btn) {
         showPage('pageLogin');
         return;
     }
+    showClickCountdown("Cancelling Interest in")
 
     const senderPhone = loggedProfile['Your Phone Number'];
 
@@ -2113,6 +2352,7 @@ async function preloadCSV() {
         console.error("CSV Load Failed", err);
     }
 }
+
 async function loadProfilesFully() {
     return new Promise(async (resolve, reject) => {
         try {
@@ -2140,7 +2380,6 @@ async function loadProfilesFully() {
   </script>
   </body>
   </html>
-
 
 
 
