@@ -3,12 +3,12 @@
   <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Matrimony — Login / Search / My Profile</title>
+  <title>DMarry Disability Matrimony</title>
   <style>
     /* 1. എല്ലാ പേജുകൾക്കും വേണ്ടി */
     :root{--primary:#007bff;--danger:#d9534f;--muted:#666}
     /* body സ്റ്റൈലിൽ മാറ്റം വരുത്തി: padding: 18px ഒഴിവാക്കി */
-    body{font-family:Arial,Helvetica,sans-serif;background:#f3f3f3;margin:0;padding:0; overflow-x: hidden;} /* പൂർണ്ണ സ്ക്രീനായി കാണാൻ */
+    body{font-family:Arial,Helvetica,sans-serif;background:#003845;margin:0;padding:0; overflow-x: hidden;} /* പൂർണ്ണ സ്ക്രീനായി കാണാൻ */
     html{margin: 0; padding: 0;} /* പൂർണ്ണ സ്ക്രീനായി കാണാൻ */
 
     /* 2. .container ക്ലാസ് ലോഗിൻ പേജിന് ആവശ്യമില്ലാത്തതിനാൽ മാറ്റി */
@@ -18,18 +18,38 @@
     h2{text-align:center;margin:6px 0 16px}
     input,button,select,textarea{padding:8px;margin:6px 0;border-radius:6px;border:1px solid #ddd;font-size:15px;box-sizing:border-box}
     button{background:var(--primary);color:#fff;border:none;cursor:pointer;padding:10px 14px;border-radius:6px}
+    h2{
+  color:#ffffff !important;
+}
+#pageSearch label{
+  color:#ffffff;
+}
+/* 🔹 REGISTER PAGE TEXT WHITE */
+#pageRegister h2,
+#pageRegister label{
+  color:#ffffff;
+}
+
+/* 🔹 EDIT PROFILE PAGE TEXT WHITE */
+#pageEdit h2,
+#pageEdit label,
+#pageEdit p{
+  color:#ffffff;
+}
+
+
     button:hover{opacity:.95}
     .small-btn{padding:8px 10px;font-size:14px}
     .flex{display:flex;gap:12px;align-items:center}
     .results{display:flex;flex-wrap:wrap;gap:15px;margin-top:20px;justify-content:center}
     .card{background:#fff;border:1px solid #e6e6e6;border-radius:8px;width:320px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;flex-direction:column}
-    .card img{width:100%;height:220px;object-fit:cover;border-radius:6px;cursor:pointer}
+    .card img{width:100%;height:280px;object-fit:cover;border-radius:6px;cursor:pointer}
     .info{font-size:14px;text-align:left;margin-top:8px;overflow-x:auto}
     .info b{display:inline-block;width:110px}
     .no-photo{width:100%;height:220px;display:flex;align-items:center;justify-content:center;background:#eee;color:#555;font-size:20px;border-radius:6px}
     #error{color:red;margin-top:10px;text-align:center}
     .pagination{text-align:center;margin-top:15px}
-    .footer-text{font-size:13px;color:#444;margin-top:14px;line-height:1.4;text-align:center}
+    .footer-text{font-size:13px;color:#ddff00;margin-top:14px;line-height:1.4;text-align:center}
     .register-note{font-size:14px;color:#333;margin-top:10px}
     .my-profile{max-width:540px;margin:20px auto 0;padding:18px;border-radius:12px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,0.04)}
     .my-profile img{width:160px;height:160px;object-fit:cover;border-radius:12px;border:3px solid #eee;display:block;margin:0 auto}
@@ -760,7 +780,7 @@ function closeSuccessPopup() {
       </div>
       <div class="results" id="results"></div>
       <div class="pagination" id="pagination"></div>
-      <div class="footer-text" style="margin-top:14px">ഭിന്നശേഷിക്കാര്ക്ക് വിവാഹമെന്ന സ്വപ്നം പൂവണിയാൻ സൗജന്യ വെബ്സൈറ്റ് — Website design by SUNEER PARAMBIL</div>
+      <div class="footer-text" style="margin-top:14px">മുന്നറിയിപ്പ് : പ്രൊഫൈലുകളുടെ സ്ക്രീന്ഷോട്ട് എടുത്ത് ഷെയർ ചെയ്യുന്നത് നിയമപ്രകാരം കുറ്റകരമാണ്</div>
     </div>
 
   </div>
@@ -1235,10 +1255,11 @@ else {
   <div style="
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:10px;
+    gap:12px;
     font-size:14px;
-    margin-top:10px;
+    margin-top:12px;
   ">
+
     <div><b>Name</b><br>${p.Name || ''}</div>
     <div><b>Age</b><br>${calculateAge(p['Date of Birth']) || 'N/A'}</div>
 
@@ -1255,6 +1276,8 @@ else {
     <div><b>Job</b><br>${p.Job || ''}</div>
 
     <div><b>District</b><br>${p.District || ''}</div>
+   
+
   </div>
   
   <div style="
@@ -1790,12 +1813,44 @@ async function deleteProfile() {
 
 
 
-  /* helper to go back to search from results */
-  function backToSearch(){ showPage('pageSearch'); }
+ /* helper to go back to search from results */
+function backToSearch(){ 
+  showPage('pageSearch'); 
+}
 
-  /* Initialize — fill DOB selects and show login */
-  fillDobSelects(); // ✅ ഇവിടെയാണ് ഈ കോഡ് ചേർക്കേണ്ടത്
-  showPage('pageLogin');
+/* ===============================
+   INITIAL LOAD (SAFE & WORKING)
+   =============================== */
+
+// 1️⃣ Fill Day / Month / Year dropdowns FIRST
+fillDobSelects();
+
+// 2️⃣ Auto-fill saved login details (phone + DOB)
+const savedLogin = localStorage.getItem("savedLogin");
+if (savedLogin) {
+  try {
+    const data = JSON.parse(savedLogin);
+
+    if (data.phone) {
+      document.getElementById("phone").value = data.phone;
+    }
+
+    if (data.dob) {
+      const parts = data.dob.replace(/[^\d]/g, "/").split("/");
+      if (parts.length === 3) {
+        document.getElementById("day").value = parseInt(parts[0]);
+        document.getElementById("month").value = parseInt(parts[1]);
+        document.getElementById("year").value = parts[2];
+      }
+    }
+  } catch (e) {
+    console.warn("Saved login parse failed", e);
+  }
+}
+
+// 3️⃣ Finally show login page
+showPage('pageLogin');
+
   
  /* ========== INTEREST LIST DISPLAY CONTROLS (FIXED) ========== */
 
@@ -2380,7 +2435,6 @@ async function loadProfilesFully() {
   </script>
   </body>
   </html>
-
 
 
 
