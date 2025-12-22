@@ -3,7 +3,7 @@
   <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>DMarry Disability Matrimony</title>
+  <title>DMarry Free Disability Matrimony</title>
   <style>
     /* 1. എല്ലാ പേജുകൾക്കും വേണ്ടി */
     :root{--primary:#007bff;--danger:#d9534f;--muted:#666}
@@ -69,10 +69,7 @@
 @media (max-width:640px){
   /* ... (മറ്റെന്തെങ്കിലും സ്റ്റൈലുകൾ ഉണ്ടെങ്കിൽ അതിനോട് ചേർക്കുക) */
 }
-@media (max-width:600px){
-  .card div[style*="grid-template-columns"]{
-    grid-template-columns:1fr !important;
-}
+
 
 /* നിങ്ങളുടെ നിലവിലുള്ള <style> സെക്ഷനിൽ ഇത് കൂടി ചേർക്കുക */
 
@@ -129,15 +126,14 @@
   ">
 
   <div style="
-    /* ബാക്ക്ഗ്രൗണ്ട് പൂർണ്ണമായി ട്രാൻസ്പരൻ്റ് */
-    background:none; 
-    padding:30px 25px;
-    border-radius:15px;
-    /* മുഴുവൻ വീതിയിൽ കാണിക്കാൻ 100% നൽകുന്നു, max-width നിയന്ത്രിക്കുന്നു */
-    width:100%; 
-    /* എല്ലാ മൊബൈലിലും വൃത്തിയായി കാണാൻ പരമാവധി വീതി (ഇത് നിങ്ങളുടെ ആവശ്യം അനുസരിച്ച് മാറ്റാം) */
-    max-width:380px; 
-    text-align:center;
+  background:none;
+  padding:36px 30px;
+  border-radius:15px;
+  width:100%;
+  max-width:420px;   /* 👈 bigger */
+  text-align:center;
+  transform: scale(1.08);   /* 👈 ZOOM */
+  transform-origin: center;
     /* ടെക്സ്റ്റ് കളർ വൈറ്റ് */
     color:#fff; 
     /* ചെറിയ ഷാഡോ നൽകി, ബോക്സിന് ഒരു ഡെപ്ത് നൽകുന്നു */
@@ -973,6 +969,11 @@ async function login() {
         if (match) {
             loggedProfile = match;
 
+// ✅ SAVE AUTO LOGIN DETAILS
+  localStorage.setItem("autoLogin", JSON.stringify({
+    phone: phone,
+    dob: enteredDob
+  }));
             localStorage.setItem('loggedProfile', JSON.stringify({
                 "Your Phone Number": match["Your Phone Number"],
                 "Date of Birth": match["Date of Birth"]
