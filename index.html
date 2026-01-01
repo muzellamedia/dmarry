@@ -561,7 +561,13 @@ function closeSuccessPopup() {
     <button onclick="logout()" style="background:#dc3545;margin-left:10px;">Logout</button>
   </div>
 
-  <div class="notice">Tip: Leave fields empty to include all.</div>
+  <div class="notice">ഭിന്നശേഷിക്കാർക്ക് വിവാഹമെന്ന സ്വപ്നം പൂവണിയാൻ സൗജന്യ വെബ്സൈറ്റ് — Website design by SUNEER PARAMBIL Whatsapp: 9645565177</div> 
+  <style>
+.notice{
+  color: white;
+}
+</style>
+
 </div>
 <script>
 
@@ -1407,6 +1413,22 @@ function showMyProfile(profile){
   // ✅ Square profile photo
   document.getElementById('myProfilePhoto').src =
     photo || "https://via.placeholder.com/160?text=No+Photo";
+    
+    // 🔹 watermark text under profile photo
+document.getElementById('myProfilePhoto').insertAdjacentHTML(
+  'afterend',
+  `<div style="
+     text-align:center;
+     font-size:22px;
+     margin-top:4px;
+     opacity:0.7;
+     color:#FF0000;
+     letter-spacing:0.5px;
+   ">
+     www.dmarry.online
+   </div>`
+);
+
 
   const details = document.getElementById('myProfileDetails');
 
@@ -2433,7 +2455,6 @@ async function loadProfilesFully() {
   </script>
   </body>
   </html>
-
 
 
 
