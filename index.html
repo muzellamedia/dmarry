@@ -203,6 +203,34 @@
 
   </div>
 </div>
+<!-- Marriage Success Popup -->
+<div id="marriagePopup" style="display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.6);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;">
+
+  <div style="
+    background:#fff;
+    padding:20px;
+    border-radius:12px;
+    max-width:320px;
+    width:90%;
+    text-align:center;
+  ">
+    <p style="font-size:15px; margin-bottom:15px;">
+      താങ്കളുടെ വിവാഹം ഈ വെബ്സൈറ്റ് വഴി ശെരിയായതാണോ?
+    </p>
+
+    <div style="display:flex; gap:10px; justify-content:center;">
+      <button onclick="confirmMarriageAnswer('YES')">YES</button>
+      <button onclick="confirmMarriageAnswer('NO')">NO</button>
+      <button onclick="confirmMarriageAnswer('SKIP')">SKIP</button>
+    </div>
+  </div>
+</div>
 
 <!-- 🔵 GLOBAL LOADING POPUP -->
 <div id="loadingPopup" style="
@@ -283,15 +311,12 @@ function closeSuccessPopup(){
   showPage('pageLogin');
   window.scrollTo(0,0);
 }
-function closeSuccessPopup() {
-    document.getElementById('successPopup').style.display = 'none';
-    showPage('pageLogin');
-    window.scrollTo(0, 0);
-}
+
 
 
 
 </script>
+
 
 </body>
 </html>
@@ -856,7 +881,7 @@ modal.addEventListener('click', () => {
   let csvReady = false;
 
   /* ========== CONFIG ========== */
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwvPQMb3qtMEqbFN8hwXqZdfgBEQoGH_CBL3AGEQA9XP9ctFHYePsSMWgeXLIilXves/exec"; // <-- set your script URL
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGC84Y0iTFvY31ugBW7Nk1SZgAPfFESnTOdPtiS1Q92Q_5_52MubfJCc2r2LFjmk3E/exec"; // <-- set your script URL
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHJLHXWQaMioqSExrL-vdbu65_py6Ti9KzPtkxXaMaj9CygZ9OFH1a3ne7rCQ0_fF_KhNc-OiPDmvo/pub?output=csv"; // your published CSV
 
 /* ========== STATE ========== */
@@ -906,6 +931,19 @@ function showPage(id){
       for(let i=new Date().getFullYear(); i>=1960; i--) yearEls.forEach(e=>e.insertAdjacentHTML('beforeend',`<option value="${i}">${i}</option>`));
     }
   }
+  // ===== Marriage success popup helper =====
+let marriageAnswer = "SKIP";
+
+function showMarriagePopup(){
+  document.getElementById("marriagePopup").style.display = "flex";
+}
+
+function confirmMarriageAnswer(ans){
+  marriageAnswer = ans;
+  document.getElementById("marriagePopup").style.display = "none";
+  proceedDeleteProfile();
+}
+
   /* ===============================
    INITIAL LOAD (IMPORTANT PART)
    =============================== */
@@ -1744,53 +1782,45 @@ showMyProfile(loggedProfile);
 
 /* Delete entire profile */
 /* ❌ DELETE ENTIRE PROFILE — FINAL SAFE VERSION */
-async function deleteProfile() {
-    if (!loggedProfile) { 
-        alert('Please login first'); 
-        return; 
+function deleteProfile(){
+  if(!loggedProfile){
+    alert("Please login first");
+    return;
+  }
+  showMarriagePopup(); // 👈 show popup instead of prompt
+}
+
+async function proceedDeleteProfile(){
+
+  if(!confirm("⚠️ നിങ്ങളുടെ പ്രൊഫൈൽ സ്ഥിരമായി ഡിലീറ്റ് ചെയ്യപ്പെടും. തുടരണമോ?")){
+    return;
+  }
+
+  showLoadingPopup("Deleting profile...");
+
+  const fd = new FormData();
+  fd.append("action","deleteProfile");
+  fd.append("successAnswer", marriageAnswer);
+  fd.append("name", loggedProfile.Name || "");
+  fd.append("phone", loggedProfile["Your Phone Number"]);
+
+  try{
+    const res = await fetch(SCRIPT_URL,{ method:"POST", body:fd });
+    const text = await res.text();
+
+    hideLoadingPopup();
+
+    if(text.includes("PROFILE_DELETED")){
+      alert("Profile deleted successfully. Thank you 💚");
+      logout();
+    }else{
+      alert("Error: " + text);
     }
 
-    if (!confirm('⚠️ Delete your entire profile permanently? This cannot be undone.')) {
-        return;
-    }
-
-    showLoadingPopup("Deleting your profile...");
-
-    const status = document.getElementById('myProfileStatus');
-    status.style.color = '#555';
-    status.textContent = 'Deleting profile... please wait...';
-
-    const formData = new FormData();
-    formData.append('action', 'deleteProfile');  
-    appendUserIdentity(formData);               // adds phone safely
-
-    try {
-        const res = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
-        const text = await res.text().then(t => t.trim());
-
-        hideLoadingPopup();
-
-        if (text.includes('PROFILE_DELETED')) {
-
-            status.style.color = 'green';
-            status.textContent = 'Your profile has been deleted permanently.';
-
-            // ⭐ Instant Safe Logout
-            setTimeout(() => {
-                logout(); // clears localStorage, back to login page
-            }, 1000);
-
-        } else {
-            status.style.color = 'red';
-            status.textContent = 'Failed: ' + text;
-        }
-
-    } catch (e) {
-        hideLoadingPopup();
-        status.style.color = 'red';
-        status.textContent = 'Network error. Please try again.';
-        console.error(e);
-    }
+  }catch(e){
+    hideLoadingPopup();
+    alert("Network error");
+  }
 }
 
 
@@ -2479,7 +2509,6 @@ async function loadProfilesFully() {
   </script>
   </body>
   </html>
-
 
 
 
